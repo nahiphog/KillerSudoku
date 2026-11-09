@@ -1,4 +1,15 @@
 .board-actions { border-top: 1px solid #e2e6dd; padding: 0 0 20px; display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
+.generation-toolbar { max-width: 1104px; margin: 20px auto 0; display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+.generation-toolbar button { width: auto; margin: 0; }
+.generation-toolbar p { font-size: 12px; color: #657160; margin: 0; }
+#technique-tally { width: 100%; border-collapse: collapse; font-size: 12px; }
+#technique-tally caption { text-align: left; margin-bottom: 12px; }
+#technique-tally th, #technique-tally td { padding: 9px 4px; border-bottom: 1px solid #dedfd4; text-align: left; }
+#technique-tally td, #technique-tally thead th:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+#walkthrough { display: block; width: 100%; min-height: 36px; margin: 8px 0; accent-color: #2f503d; cursor: pointer; }
+#walkthrough-position { display: block; font-size: 12px; font-variant-numeric: tabular-nums; }
+@media (max-width: 1180px) { .generation-toolbar { margin-left: 35px; margin-right: 35px; } }
+@media (max-width: 760px) { .generation-toolbar { margin-left: 20px; margin-right: 20px; } }
 .board-actions button { width: auto; margin-top: 16px; }
 .board-actions label { display: flex; align-items: center; font-size: 12px; gap: 6px; margin-top: 16px; }
 .solver-panel { padding: 24px; background: #fff; border: 1px solid #dedfd4; border-radius: 14px; }

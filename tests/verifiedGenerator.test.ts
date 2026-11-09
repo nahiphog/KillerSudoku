@@ -19,6 +19,24 @@ describe('verified puzzle generation', () => {
   it.each([1, 2, 3, 4, 5])('replays a complete logical proof from blank for default seed %i', seed => {
     const puzzle = generateVerifiedPuzzle({}, { random: rng(seed), maxMilliseconds: 30000 });
     expect(puzzle.proofSteps).toBeGreaterThan(0);
+    expect(puzzle.deductions).toHaveLength(puzzle.proofSteps);
+    expect(puzzle.elapsedMilliseconds).toBeGreaterThanOrEqual(0);
+    const tally: Record<string, number> = {};
+    for (const step of puzzle.deductions) tally[step.technique] = (tally[step.technique] ?? 0) + 1;
+    expect(puzzle.techniqueTally).toEqual(tally);
+    expect(Object.values(tally).reduce((sum, count) => sum + count, 0)).toBe(puzzle.proofSteps);
+    let replay = startSolver();
+    const states = [replay];
+    for (const step of puzzle.deductions) {
+      replay = applyDeduction(replay, puzzle.cages, step);
+      states.push(replay);
+    }
+    expect(Array.from(states.at(-1)!.values)).toEqual(puzzle.values);
+    expect(Array.from(states[0].values).every(value => value === 0)).toBe(true);
+    const middle = Math.floor(puzzle.proofSteps / 2);
+    const snapshot = Array.from(states[middle].values);
+    applyDeduction(states[middle], puzzle.cages, puzzle.deductions[middle]);
+    expect(Array.from(states[middle].values)).toEqual(snapshot);
     const proof = proveLogically(puzzle.cages);
     expect(proof?.values).toEqual(puzzle.values);
     expect(proof?.steps).toBe(puzzle.proofSteps);

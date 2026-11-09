@@ -4,7 +4,7 @@ import { cageOptionsError, DEFAULT_CAGE_SIZES, type Cage } from './engine/cages'
 import type { PuzzleOptions, VerifiedPuzzle } from './engine/verifiedGenerator';
 import { DIFFICULTIES, DIFFICULTY_TECHNIQUES, type Difficulty } from './engine/difficulty';
 import { header, footer, setupAbout } from './shell';
-import { applyDeduction, startSolver, type Deduction, type SolverResult } from './engine/killerSolver';
+import { applyDeduction, startSolver, type Deduction } from './engine/killerSolver';
 import { cellName, digitsOf, type Grid } from './vendor/sudokui/board';
 import './solver.css';
 import { newManualBoard, enterManualDigit, eraseManualCell, manualStatus, moveSelection } from './engine/manualPlay';
@@ -12,6 +12,7 @@ import './manual.css';
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   ${header}
+  <div class="generation-toolbar"><button id="generate" type="button">↻ Generate</button><button id="cancel-generation" type="button" hidden>Cancel generation</button><p>Uses the generation settings below.</p></div>
   <main>
     <div class="workspace">
       <section class="board-panel" aria-labelledby="board-title">
@@ -42,13 +43,17 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
             <p class="setting-help">Only selected sizes will be used. Each cage has connected cells and no repeated digits.</p>
           </fieldset>
           <p id="settings-error" class="error" role="alert" hidden></p>
-          <button id="generate" type="button"><span aria-hidden="true">↻</span> Generate <span class="button-arrow" aria-hidden="true">↗</span></button>
-          <button id="cancel-generation" type="button" hidden>Cancel generation</button>
           <p class="hint">Settings apply to the next generated grid.</p>
+        </section>
+        <section class="solver-panel" aria-labelledby="statistics-title"><h2 id="statistics-title">Puzzle statistics</h2>
+          <p id="construction-time">Generate a puzzle to see construction time and technique counts.</p>
+          <p>Counts cover the complete verified solution, one count per deduction.</p>
+          <table id="technique-tally" hidden><caption>Techniques used in the full solve</caption><thead><tr><th scope="col">Technique</th><th scope="col">Steps</th></tr></thead><tbody></tbody><tfoot><tr><th scope="row">Total</th><td id="tally-total"></td></tr></tfoot></table>
         </section>
         <section class="solver-panel" aria-labelledby="solver-title"><h2 id="solver-title">Step-by-step solver</h2>
           <p>Start with cages and sums only. Each step explains a placement or a candidate elimination. The solver has its own board; your manual entries are preserved.</p>
           <div class="solver-actions"><button id="next-step" type="button" disabled>Next step</button><button id="undo-step" type="button" disabled>Undo step</button><button id="reset-solver" type="button" disabled>Reset solver</button></div>
+          <label for="walkthrough">Solution walkthrough</label><input id="walkthrough" type="range" min="0" max="0" value="0" step="1" disabled aria-describedby="walkthrough-position"><output id="walkthrough-position" for="walkthrough">Step 0 of 0</output>
           <p id="solver-message" role="status" aria-live="polite">Generate a grid to begin.</p>
           <ol id="step-history" reversed aria-label="Deduction history"></ol>
         </section>
@@ -76,9 +81,10 @@ let boardView: 'manual' | 'solver' = 'manual';
 let manualBoard = newManualBoard();
 let selectedCell = 0;
 let pencilMode = false;
-let solverWorker: Worker | null = null;
-let solverStopped = false;
-const history: { before: Grid; step: Deduction }[] = [];
+let walkthroughPosition = 0;
+const history: { after: Grid; step: Deduction }[] = [];
+const walkthrough = document.querySelector<HTMLInputElement>('#walkthrough')!;
+const walkthroughOutput = document.querySelector('#walkthrough-position')!;
 const toggleSolution = document.querySelector<HTMLButtonElement>('#toggle-solution')!;
 const candidateToggle = document.querySelector<HTMLInputElement>('#show-candidates')!;
 const nextButton = document.querySelector<HTMLButtonElement>('#next-step')!;
@@ -92,13 +98,18 @@ const pencilButton = document.querySelector<HTMLButtonElement>('#pencil-mode')!;
 const eraseButton = document.querySelector<HTMLButtonElement>('#erase-entry')!;
 const numberButtons = [...document.querySelectorAll<HTMLButtonElement>('[data-digit]')];
 const manualMessage = document.querySelector('#manual-message')!;
-function canEdit() { return !!solution && !worker && !solverWorker && !revealSolution && boardView === 'manual'; }
+function canEdit() { return !!solution && !worker && !revealSolution && boardView === 'manual'; }
 function updateSolverControls() {
-  const busy = !!worker || !!solverWorker;
+  const busy = !!worker;
   toggleSolution.disabled = !solution || busy;
   candidateToggle.disabled = !solution || busy || revealSolution || boardView === 'manual';
-  nextButton.disabled = !solution || busy || solverStopped;
-  undoButton.disabled = !history.length || busy;
+  nextButton.disabled = !solution || busy || walkthroughPosition === history.length;
+  undoButton.disabled = walkthroughPosition === 0 || busy;
+  walkthrough.disabled = !solution || busy;
+  walkthrough.max = String(history.length);
+  walkthrough.value = String(walkthroughPosition);
+  walkthrough.setAttribute('aria-valuetext', `Step ${walkthroughPosition} of ${history.length}`);
+  walkthroughOutput.textContent = `Step ${walkthroughPosition} of ${history.length}`;
   resetButton.disabled = !solution || busy;
   toggleSolution.textContent = revealSolution ? 'Hide solution' : 'Show solution';
   toggleSolution.setAttribute('aria-pressed', String(!revealSolution));
@@ -122,7 +133,7 @@ function updateManualMessage() {
     : `${cellName(selectedCell)} selected · ${pencilMode ? 'pencil marks' : 'digit entry'} · ${manualBoard.values.filter(Boolean).length}/81 filled.${conflicts.size ? ' Red digits conflict with a Sudoku or cage rule.' : ''}`;
 }
 function selectCell(cell: number) {
-  if (!solution || worker || solverWorker) return;
+  if (!solution || worker) return;
   selectedCell = cell; boardView = 'manual'; revealSolution = false;
   paint(); updateManualMessage(); cells[cell].focus({ preventScroll: true });
 }
@@ -153,7 +164,7 @@ numberButtons.forEach(button => button.addEventListener('click', () => enterDigi
 document.querySelector('.board-panel')!.addEventListener('keydown', event => {
   const key = event as KeyboardEvent;
   const target = key.target as HTMLElement;
-  if (!solution || worker || solverWorker || key.ctrlKey || key.metaKey || key.altKey || key.isComposing
+  if (!solution || worker || key.ctrlKey || key.metaKey || key.altKey || key.isComposing
     || target.matches('input, select, textarea') || target.isContentEditable) return;
   if (target.matches('[role="gridcell"]') && (key.key.startsWith('Arrow') || key.key === 'Enter' || key.key === ' ')) {
     key.preventDefault(); selectCell(moveSelection(selectedCell, key.key)); return;
@@ -163,63 +174,53 @@ document.querySelector('.board-panel')!.addEventListener('keydown', event => {
   else if (['Backspace', 'Delete', '0'].includes(key.key)) { key.preventDefault(); eraseEntry(); }
   else if (key.key.toLowerCase() === 'p') { key.preventDefault(); togglePencil(); }
 });
-function resetSolving() {
-  solverWorker?.terminate(); solverWorker = null;
-  solvingGrid = startSolver(); history.length = 0; solverStopped = false;
-  historyList.replaceChildren();
-  solverMessage.textContent = `Ready. ${verifiedDifficulty} · hardest technique: ${hardestTechnique}. Verified unique solution in ${verifiedSteps} logical steps. Next step starts from cages and sums only.`;
+function resetSolving(deductions: Deduction[]) {
+  history.length = 0;
+  let grid = startSolver();
+  for (const step of deductions) {
+    grid = applyDeduction(grid, activeCages, step);
+    history.push({ after: grid, step });
+  }
+  walkthroughPosition = 0; solvingGrid = startSolver();
+  renderWalkthrough();
 }
+function renderWalkthrough() {
+  historyList.replaceChildren();
+  const current = history[walkthroughPosition - 1];
+  solverMessage.textContent = current
+    ? 'Step ' + walkthroughPosition + ' of ' + history.length + ': ' + current.step.technique + '. ' + Array.from(solvingGrid.values).filter(Boolean).length + '/81 cells placed.' + (walkthroughPosition === history.length ? ' Puzzle solved using logic only.' : '')
+    : 'Ready. ' + verifiedDifficulty + ' · hardest technique: ' + hardestTechnique + '. Verified unique solution in ' + verifiedSteps + ' logical steps. Move the slider or choose Next step.';
+  if (!current) return;
+  historyList.start = walkthroughPosition;
+  const item = document.createElement('li');
+  const title = document.createElement('h3'); title.textContent = current.step.technique;
+  const explanation = document.createElement('p'); explanation.textContent = current.step.description;
+  const changes = document.createElement('p'); changes.className = 'deduction-changes';
+  const removed = new Map<number, number[]>();
+  for (const { cell, digit } of current.step.eliminations) removed.set(cell, [...(removed.get(cell) ?? []), digit]);
+  changes.textContent = [
+    ...current.step.placements.map(p => 'Place ' + p.digit + ' in ' + cellName(p.cell)),
+    ...[...removed].map(([cell, digits]) => 'Remove ' + digits.join(', ') + ' from ' + cellName(cell)),
+  ].join('; ') + '.';
+  item.append(title, explanation, changes); historyList.append(item);
+}
+function seekWalkthrough(position: number) {
+  if (!solution || worker) return;
+  walkthroughPosition = Math.max(0, Math.min(history.length, Math.round(position)));
+  solvingGrid = walkthroughPosition ? history[walkthroughPosition - 1].after : startSolver();
+  boardView = 'solver'; revealSolution = false; candidateToggle.checked = true;
+  renderWalkthrough(); paint();
+}
+walkthrough.addEventListener('input', () => seekWalkthrough(Number(walkthrough.value)));
 toggleSolution.addEventListener('click', () => {
   revealSolution = !revealSolution;
   if (!revealSolution) candidateToggle.checked = false;
   paint();
 });
 candidateToggle.addEventListener('change', paint);
-resetButton.addEventListener('click', () => {
-  resetSolving(); boardView = 'solver'; revealSolution = false; candidateToggle.checked = false; paint();
-});
-undoButton.addEventListener('click', () => {
-  const previous = history.pop();
-  if (!previous) return;
-  solvingGrid = previous.before; solverStopped = false; revealSolution = false; boardView = 'solver';
-  historyList.firstElementChild?.remove(); historyList.start = history.length;
-  solverMessage.textContent = 'Last deduction undone. ' + history.length + ' steps applied.';
-  paint();
-});
-nextButton.addEventListener('click', () => {
-  revealSolution = false; boardView = 'solver'; candidateToggle.checked = true;
-  solverMessage.textContent = 'Checking cage combinations and Sudoku techniques…';
-  try {
-    solverWorker = new Worker(new URL('./engine/solver.worker.ts', import.meta.url), { type: 'module' });
-  } catch {
-    solverMessage.textContent = 'Unable to start the solver. Please reload and try again.';
-    paint(); return;
-  }
-  paint(); validate();
-  const finish = () => { solverWorker?.terminate(); solverWorker = null; paint(); validate(); };
-  solverWorker.onmessage = (event: MessageEvent<SolverResult>) => {
-    const result = event.data;
-    if (result.status === 'step') {
-      history.push({ before: solvingGrid, step: result.step });
-      solvingGrid = applyDeduction(solvingGrid, activeCages, result.step);
-      const item = document.createElement('li');
-      const title = document.createElement('h3'); title.textContent = result.step.technique;
-      const explanation = document.createElement('p'); explanation.textContent = result.step.description;
-      const changes = document.createElement('p'); changes.className = 'deduction-changes';
-      const removed = new Map<number, number[]>();
-      for (const { cell, digit } of result.step.eliminations) removed.set(cell, [...(removed.get(cell) ?? []), digit]);
-      changes.textContent = [
-        ...result.step.placements.map(p => 'Place ' + p.digit + ' in ' + cellName(p.cell)),
-        ...[...removed].map(([cell, digits]) => 'Remove ' + digits.join(', ') + ' from ' + cellName(cell)),
-      ].join('; ') + '.';
-      item.append(title, explanation, changes); historyList.prepend(item); historyList.start = history.length;
-      solverMessage.textContent = 'Step ' + history.length + ': ' + result.step.technique + '. ' + Array.from(solvingGrid.values).filter(Boolean).length + '/81 cells placed.';
-    } else { solverStopped = true; solverMessage.textContent = result.message; }
-    finish();
-  };
-  solverWorker.onerror = () => { solverMessage.textContent = 'The solver could not complete this step. Please try again.'; finish(); };
-  solverWorker.postMessage({ grid: solvingGrid, cages: activeCages });
-});
+resetButton.addEventListener('click', () => seekWalkthrough(0));
+undoButton.addEventListener('click', () => seekWalkthrough(walkthroughPosition - 1));
+nextButton.addEventListener('click', () => seekWalkthrough(walkthroughPosition + 1));
 const difficultySelect = document.querySelector<HTMLSelectElement>('#difficulty')!;
 difficultySelect.addEventListener('change', () => {
   const level = difficultySelect.value as Difficulty;
@@ -236,7 +237,7 @@ function validate() {
     ? 'Nine-cell cages all sum to 45 and cannot give a unique puzzle. Allow smaller cage sizes.' : null);
   errorText.textContent = error ?? '';
   errorText.hidden = !error;
-  button.disabled = !!error || !!worker || !!solverWorker;
+  button.disabled = !!error || !!worker;
 }
 cancelGeneration.addEventListener('click', () => {
   worker?.terminate(); worker = null;
@@ -257,7 +258,7 @@ function renderBoard(values: number[], cages: Cage[]) {
     digit.textContent = values[i] ? String(values[i]) : '';
     cell.append(digit);
     cell.setAttribute('aria-label', `Row ${Math.floor(i / 9) + 1}, column ${i % 9 + 1}, ${values[i] || 'empty'}, cage sum ${cage.sum}, ${cage.cells.length} cells`);
-    cell.classList.toggle('deduction-cell', !revealSolution && boardView === 'solver' && !!history.at(-1)?.step.cells.includes(i));
+    cell.classList.toggle('deduction-cell', !revealSolution && boardView === 'solver' && !!history[walkthroughPosition - 1]?.step.cells.includes(i));
     cell.classList.toggle('selected-cell', manual && selectedCell === i);
     cell.classList.toggle('conflict-cell', conflicts.has(i));
     cell.setAttribute('aria-selected', String(manual && selectedCell === i));
@@ -321,15 +322,25 @@ button.addEventListener('click', () => {
     worker = new Worker(new URL('./engine/generation.worker.ts', import.meta.url), { type: 'module' });
     updateSolverControls();
     worker.onmessage = (event: MessageEvent<Partial<VerifiedPuzzle> & { error?: string; progress?: number }>) => {
-      const { values, cages, error, progress, proofSteps, difficulty, hardestTechnique: hardest } = event.data;
+      const { values, cages, error, progress, proofSteps, difficulty, hardestTechnique: hardest, deductions, techniqueTally, elapsedMilliseconds, attempts } = event.data;
       if (progress !== undefined) {
         status.textContent = `Checking candidate ${progress}: seeking ${selectedOptions.difficulty} difficulty with a complete logical solve.`;
         return;
       }
-      if (error || !values || !cages || !proofSteps || !difficulty || difficulty !== selectedOptions.difficulty || !hardest) { fail(error ?? 'Unable to verify the requested difficulty. Try again.'); return; }
+      if (error || !values || !cages || !proofSteps || !difficulty || difficulty !== selectedOptions.difficulty || !hardest || !deductions || deductions.length !== proofSteps || !techniqueTally || elapsedMilliseconds === undefined) { fail(error ?? 'Unable to verify the requested difficulty. Try again.'); return; }
+      document.querySelector('#construction-time')!.textContent = 'Constructed and logically verified in ' + (elapsedMilliseconds / 1000).toFixed(2) + ' seconds · ' + attempts + ' candidate puzzles checked.';
+      const tally = document.querySelector<HTMLTableElement>('#technique-tally')!;
+      tally.hidden = false;
+      const body = tally.tBodies[0]; body.replaceChildren();
+      for (const [technique, count] of Object.entries(techniqueTally)) {
+        const row = body.insertRow();
+        const name = document.createElement('th'); name.scope = 'row'; name.textContent = technique;
+        row.append(name); row.insertCell().textContent = String(count);
+      }
+      document.querySelector('#tally-total')!.textContent = String(proofSteps);
       verifiedSteps = proofSteps;
       verifiedDifficulty = difficulty; hardestTechnique = hardest;
-      solution = values; activeCages = cages; resetSolving(); revealSolution = false; candidateToggle.checked = false;
+      solution = values; activeCages = cages; resetSolving(deductions); revealSolution = false; candidateToggle.checked = false;
       manualBoard = newManualBoard(); selectedCell = 0; pencilMode = false; boardView = 'manual';
       updateManualMessage();
       paint();
