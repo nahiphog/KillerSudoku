@@ -6,6 +6,7 @@
 .solver-panel p { font-size: 12px; line-height: 1.8; overflow-wrap: anywhere; }
 .solver-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .solver-actions button { width: auto; padding: 10px 12px; margin: 8px 0; font-size: 12px; }
+#cancel-generation[hidden] { display: none; }
 #solver-message { border-left: 3px solid #819966; padding-left: 12px; }
 #step-history { max-height: 480px; overflow-y: auto; padding-left: 24px; }
 #step-history li { border-top: 1px solid #dedfd4; padding: 12px 0; }

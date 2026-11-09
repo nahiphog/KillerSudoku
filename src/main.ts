@@ -17,7 +17,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         <div class="board-actions"><button id="toggle-solution" type="button" disabled>Hide solution</button><label><input id="show-candidates" type="checkbox" disabled> Show candidates</label></div>
       </section>
       <aside>
-        <section class="generate-panel"><h2>Generate a puzzle grid</h2><p>Create a completed Sudoku grid and a fresh cage layout together.</p>
+        <section class="generate-panel"><h2>Generate a puzzle grid</h2><p>Every puzzle is verified to have one solution and a complete logical solve using cage combinations and Sudoku techniques.</p>
           <fieldset id="settings"><legend>Cage settings</legend>
             <label class="symmetry-option"><input id="symmetry" type="checkbox" checked> Rotationally symmetric cages</label>
             <p class="setting-help">Cage shapes match after a 180° turn.</p>
@@ -28,6 +28,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
           </fieldset>
           <p id="settings-error" class="error" role="alert" hidden></p>
           <button id="generate" type="button"><span aria-hidden="true">↻</span> Generate <span class="button-arrow" aria-hidden="true">↗</span></button>
+          <button id="cancel-generation" type="button" hidden>Cancel generation</button>
           <p class="hint">Settings apply to the next generated grid.</p>
         </section>
         <section class="solver-panel" aria-labelledby="solver-title"><h2 id="solver-title">Step-by-step solver</h2>
@@ -42,11 +43,13 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   ${footer}`;
 setupAbout();
 const button = document.querySelector<HTMLButtonElement>('#generate')!;
+const cancelGeneration = document.querySelector<HTMLButtonElement>('#cancel-generation')!;
 const settings = document.querySelector<HTMLFieldSetElement>('#settings')!;
 const status = document.querySelector('#status')!;
 const errorText = document.querySelector<HTMLParagraphElement>('#settings-error')!;
 const cells = [...document.querySelectorAll<HTMLTableCellElement>('.board td')];
 let generation = 0;
+let verifiedSteps = 0;
 let worker: Worker | null = null;
 let solution: number[] | null = null;
 let activeCages: Cage[] = [];
@@ -80,7 +83,7 @@ function resetSolving() {
   solverWorker?.terminate(); solverWorker = null;
   solvingGrid = startSolver(); history.length = 0; solverStopped = false;
   historyList.replaceChildren();
-  solverMessage.textContent = 'Ready. Next step analyzes the cages and sums without using the generated solution.';
+  solverMessage.textContent = `Ready. Verified unique solution in ${verifiedSteps} logical steps. Next step starts from cages and sums only.`;
 }
 toggleSolution.addEventListener('click', () => {
   revealSolution = !revealSolution;
@@ -138,11 +141,19 @@ const options = (): CageOptions => ({
   sizes: [...document.querySelectorAll<HTMLInputElement>('input[name="size"]:checked')].map(input => Number(input.value)),
 });
 function validate() {
-  const error = cageOptionsError(options());
+  const selected = options();
+  const error = cageOptionsError(selected) ?? (selected.sizes?.every(size => size === 9)
+    ? 'Nine-cell cages all sum to 45 and cannot give a unique puzzle. Allow smaller cage sizes.' : null);
   errorText.textContent = error ?? '';
   errorText.hidden = !error;
   button.disabled = !!error || !!worker || !!solverWorker;
 }
+cancelGeneration.addEventListener('click', () => {
+  worker?.terminate(); worker = null;
+  settings.disabled = false; cancelGeneration.hidden = true;
+  status.textContent = 'Generation cancelled. Your previous puzzle is unchanged.';
+  validate(); updateSolverControls();
+});
 settings.addEventListener('change', validate);
 function renderBoard(values: number[], cages: Cage[]) {
   const cageForCell = new Map(cages.flatMap(cage => cage.cells.map(cell => [cell, cage] as const)));
@@ -194,11 +205,13 @@ button.addEventListener('click', () => {
   const selectedOptions = options();
   settings.disabled = true;
   button.disabled = true;
-  status.textContent = 'Generating a completed grid and matching cages…';
+  status.textContent = 'Searching for a uniquely solvable puzzle and verifying every logical step…';
+  cancelGeneration.hidden = false;
   const cleanup = () => {
     worker?.terminate();
     worker = null;
     settings.disabled = false;
+    cancelGeneration.hidden = true;
     validate();
     updateSolverControls();
   };
@@ -211,14 +224,19 @@ button.addEventListener('click', () => {
   try {
     worker = new Worker(new URL('./engine/generation.worker.ts', import.meta.url), { type: 'module' });
     updateSolverControls();
-    worker.onmessage = (event: MessageEvent<{ values?: number[]; cages?: Cage[]; error?: string }>) => {
-      const { values, cages, error } = event.data;
-      if (error || !values || !cages) { fail(error ?? 'Unable to generate a grid. Try again.'); return; }
+    worker.onmessage = (event: MessageEvent<{ values?: number[]; cages?: Cage[]; error?: string; progress?: number; proofSteps?: number }>) => {
+      const { values, cages, error, progress, proofSteps } = event.data;
+      if (progress !== undefined) {
+        status.textContent = `Checking candidate ${progress}: verifying a complete logical solve. Only verified puzzles are accepted.`;
+        return;
+      }
+      if (error || !values || !cages || !proofSteps) { fail(error ?? 'Unable to verify a puzzle. Try again.'); return; }
+      verifiedSteps = proofSteps;
       solution = values; activeCages = cages; resetSolving(); revealSolution = true; candidateToggle.checked = false;
       paint();
       generation++;
       document.querySelector('#badge')!.textContent = `${cages.length} CAGES`;
-      status.textContent = `Grid ${generation} · ${cages.length} ${selectedOptions.symmetric ? 'rotationally symmetric' : 'connected'} cages · all 81 cells covered.`;
+      status.textContent = `Puzzle ${generation} · ${cages.length} ${selectedOptions.symmetric ? 'symmetric' : 'connected'} cages · unique solution · ${proofSteps} logical steps verified.`;
       cleanup();
     };
     worker.onerror = () => fail('Unable to generate a grid. Please reload and try again.');
