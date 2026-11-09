@@ -3,6 +3,8 @@ import { findNextStep, TECHNIQUES } from './solver';
 import { combinationTable } from './combinations';
 import type { Cage } from './cages';
 import { techniqueRank } from './difficulty';
+import { deductionLinks } from './deductionLinks';
+import type { ChainLink } from '../vendor/sudokui/steps';
 
 export interface Deduction {
   technique: string;
@@ -12,6 +14,7 @@ export interface Deduction {
   cells: number[];
   supportCells: number[];
   supportDigits: { cell: number; digit: number }[];
+  links?: ChainLink[];
 }
 export type SolverResult =
   | { status: 'step'; step: Deduction }
@@ -113,6 +116,7 @@ export function nextKillerStep(grid: Grid, cages: Cage[]): SolverResult {
   if (step) return { status: 'step', step: {
     technique: TECHNIQUES.find(t => t.id === step.tech)?.name ?? step.tech,
     description: step.description, placements: step.placements, eliminations: step.eliminations,
+    links: deductionLinks(step),
     cells: [...new Set([...step.placements, ...step.eliminations, ...(step.primary ?? []), ...(step.secondary ?? [])].map(item => item.cell))],
     supportCells: [...new Set([
       ...pattern.map(item => item.cell),

@@ -9,6 +9,7 @@ import { cellName, digitsOf, type Grid } from './vendor/sudokui/board';
 import './solver.css';
 import { newManualBoard, enterManualDigit, eraseManualCell, manualStatus, moveSelection } from './engine/manualPlay';
 import './manual.css';
+import { drawWalkthroughLinks } from './walkthroughLinks';
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   ${header}
@@ -22,6 +23,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         <div class="walkthrough-controls">          <div class="solver-actions"><button id="next-step" type="button" disabled>Next step</button><button id="undo-step" type="button" disabled>Undo step</button><button id="reset-solver" type="button" disabled>Reset solver</button></div>
           <label for="walkthrough">Solution walkthrough</label><input id="walkthrough" type="range" min="0" max="0" value="0" step="1" disabled aria-describedby="walkthrough-position"><output id="walkthrough-position" for="walkthrough">Step 0 of 0</output>
           <div class="change-legend"><span class="placed-digit">Placed digit</span><span class="removed-candidate">Removed candidate</span><span class="support-digit">Supporting cells / digits</span></div>
+          <div id="link-legend" hidden><span class="strong-key">Solid: at least one true</span><span class="weak-key">Dashed: cannot both be true</span></div>
 </div>
         </div>
         <section class="solver-panel" aria-labelledby="solver-title"><h2 id="solver-title">Step-by-step solver</h2>
@@ -73,6 +75,13 @@ const settings = document.querySelector<HTMLFieldSetElement>('#settings')!;
 const status = document.querySelector('#status')!;
 const errorText = document.querySelector<HTMLParagraphElement>('#settings-error')!;
 const cells = [...document.querySelectorAll<HTMLTableCellElement>('.board td')];
+const gridFrame = document.querySelector<HTMLElement>('.grid-frame')!;
+new ResizeObserver(() => renderLinks()).observe(gridFrame);
+function renderLinks() {
+  const links = !revealSolution && boardView === 'solver' ? history[walkthroughPosition - 1]?.step.links ?? [] : [];
+  drawWalkthroughLinks(gridFrame, links);
+  document.querySelector<HTMLElement>('#link-legend')!.hidden = !links.length;
+}
 let generation = 0;
 let verifiedSteps = 0;
 let verifiedDifficulty: Difficulty = 'Easy';
@@ -264,6 +273,7 @@ function renderBoard(values: number[], cages: Cage[]) {
     const digit = document.createElement('span');
     digit.className = 'cell-digit';
     digit.textContent = values[i] ? String(values[i]) : '';
+    if (values[i]) { digit.dataset.cell = String(i); digit.dataset.digit = String(values[i]); }
     const placed = !!currentStep?.placements.some(p => p.cell === i && p.digit === values[i]);
     digit.classList.toggle('placed-digit', placed);
     const supporting = currentStep?.supportDigits.filter(item => item.cell === i).map(item => item.digit) ?? [];
@@ -286,6 +296,7 @@ function renderBoard(values: number[], cages: Cage[]) {
       const candidates = digitsOf(manual ? manualBoard.notes[i] : candidateToggle.checked ? solvingGrid.cands[i] : 0);
       for (let d = 1; d <= 9; d++) {
         const mark = document.createElement('span');
+        mark.dataset.cell = String(i); mark.dataset.digit = String(d);
         mark.textContent = candidates.includes(d) || removed.includes(d) || supporting.includes(d) ? String(d) : '';
         mark.classList.toggle('removed-candidate', removed.includes(d));
         mark.classList.toggle('support-digit', !removed.includes(d) && supporting.includes(d));
@@ -318,6 +329,7 @@ function renderBoard(values: number[], cages: Cage[]) {
     }
   });
   document.querySelector('.board')!.classList.add('has-cages');
+  renderLinks();
 }
 button.addEventListener('click', () => {
   validate();
