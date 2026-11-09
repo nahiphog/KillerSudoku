@@ -21,7 +21,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         <div class="grid-frame"><table class="board" role="grid" aria-label="Sudoku grid" aria-describedby="manual-help"><tbody>${Array.from({ length: 9 }, (_, r) => `<tr>${Array.from({ length: 9 }, (_, c) => `<td role="gridcell" tabindex="-1" aria-label="Row ${r + 1}, column ${c + 1}, empty"></td>`).join('')}</tr>`).join('')}</tbody></table></div>
         <div class="walkthrough-controls">          <div class="solver-actions"><button id="next-step" type="button" disabled>Next step</button><button id="undo-step" type="button" disabled>Undo step</button><button id="reset-solver" type="button" disabled>Reset solver</button></div>
           <label for="walkthrough">Solution walkthrough</label><input id="walkthrough" type="range" min="0" max="0" value="0" step="1" disabled aria-describedby="walkthrough-position"><output id="walkthrough-position" for="walkthrough">Step 0 of 0</output>
-          <div class="change-legend"><span class="placed-digit">Placed digit</span><span class="removed-candidate">Removed candidate</span></div>
+          <div class="change-legend"><span class="placed-digit">Placed digit</span><span class="removed-candidate">Removed candidate</span><span class="support-digit">Supporting cells / digits</span></div>
 </div>
         </div>
         <section class="solver-panel" aria-labelledby="solver-title"><h2 id="solver-title">Step-by-step solver</h2>
@@ -266,6 +266,9 @@ function renderBoard(values: number[], cages: Cage[]) {
     digit.textContent = values[i] ? String(values[i]) : '';
     const placed = !!currentStep?.placements.some(p => p.cell === i && p.digit === values[i]);
     digit.classList.toggle('placed-digit', placed);
+    const supporting = currentStep?.supportDigits.filter(item => item.cell === i).map(item => item.digit) ?? [];
+    digit.classList.toggle('support-digit', !placed && supporting.includes(values[i]));
+    cell.classList.toggle('support-cell', !!currentStep?.supportCells.includes(i));
     // Include peer candidates removed automatically when a digit is placed.
     const removed = beforeStep && !values[i] ? digitsOf(beforeStep.cands[i] & ~solvingGrid.cands[i]) : [];
     cell.append(digit);
@@ -276,13 +279,16 @@ function renderBoard(values: number[], cages: Cage[]) {
     cell.setAttribute('aria-selected', String(manual && selectedCell === i));
     if (conflicts.has(i)) cell.setAttribute('aria-label', cell.getAttribute('aria-label') + ', rule conflict');
     if (placed) cell.setAttribute('aria-label', cell.getAttribute('aria-label') + ', placed this step');
-    if (!revealSolution && !values[i] && (manual ? !!manualBoard.notes[i] : candidateToggle.checked || removed.length > 0)) {
+    if (currentStep?.supportCells.includes(i)) cell.setAttribute('aria-label', cell.getAttribute('aria-label') + ', supporting cell');
+    if (supporting.length) cell.setAttribute('aria-label', cell.getAttribute('aria-label') + ', supporting digits: ' + supporting.join(', '));
+    if (!revealSolution && !values[i] && (manual ? !!manualBoard.notes[i] : candidateToggle.checked || removed.length > 0 || supporting.length > 0)) {
       const notes = document.createElement('span'); notes.className = 'cell-candidates';
       const candidates = digitsOf(manual ? manualBoard.notes[i] : candidateToggle.checked ? solvingGrid.cands[i] : 0);
       for (let d = 1; d <= 9; d++) {
         const mark = document.createElement('span');
-        mark.textContent = candidates.includes(d) || removed.includes(d) ? String(d) : '';
+        mark.textContent = candidates.includes(d) || removed.includes(d) || supporting.includes(d) ? String(d) : '';
         mark.classList.toggle('removed-candidate', removed.includes(d));
+        mark.classList.toggle('support-digit', !removed.includes(d) && supporting.includes(d));
         notes.append(mark);
       }
       cell.append(notes);

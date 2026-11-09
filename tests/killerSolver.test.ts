@@ -51,11 +51,16 @@ describe('Killer Sudoku deductions', () => {
     const first = nextKillerStep(grid, rowCages);
     expect(first.status).toBe('step');
     if (first.status !== 'step') throw new Error('Expected deduction');
+    expect(first.step.supportCells).toEqual(rowCages[0].cells);
+    expect(first.step.supportDigits).toContainEqual({ cell: 0, digit: 1 });
+    expect(first.step.supportDigits).not.toContainEqual({ cell: 1, digit: 1 });
     const next = nextKillerStep(applyDeduction(grid, rowCages, first.step), rowCages);
     expect(next.status).toBe('step');
     if (next.status === 'step') {
       expect(next.step.technique).toBe('Naked Single');
       expect(next.step.placements).toEqual([{ cell: 0, digit: 1 }]);
+      expect(next.step.supportDigits).toContainEqual({ cell: 0, digit: 1 });
+      expect(next.step.supportCells).toContain(0);
     }
     expect(grid.values[0]).toBe(0);
   });
@@ -68,6 +73,8 @@ describe('Killer Sudoku deductions', () => {
     expect(result.status).toBe('step');
     if (result.status !== 'step') throw new Error('Expected deduction');
     expect(result.step.technique).toBe('Cage remainder');
+    expect(result.step.supportCells).toEqual(rowCages[0].cells);
+    expect(result.step.supportDigits).toEqual(rowCages[0].cells.slice(1).map(cell => ({ cell, digit: values[cell] })));
     const completed = applyDeduction(grid, rowCages, result.step);
     expect(nextKillerStep(completed, rowCages).status).toBe('solved');
     expect(nextKillerStep(completed, rowCages.map((c, i) => i ? c : { ...c, sum: 44 })).status).toBe('contradiction');

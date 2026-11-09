@@ -10,6 +10,8 @@ export interface Deduction {
   placements: { cell: number; digit: number }[];
   eliminations: { cell: number; digit: number }[];
   cells: number[];
+  supportCells: number[];
+  supportDigits: { cell: number; digit: number }[];
 }
 export type SolverResult =
   | { status: 'step'; step: Deduction }
@@ -84,6 +86,8 @@ export function nextKillerStep(grid: Grid, cages: Cage[]): SolverResult {
         technique: 'Cage remainder',
         description: name + ': the placed digits total ' + usedSum + '. The remaining cell ' + cellName(empty[0]) + ' must be ' + cage.sum + ' − ' + usedSum + ' = ' + digit + '.',
         placements: [{ cell: empty[0], digit }], eliminations: [], cells: cage.cells,
+        supportCells: cage.cells,
+        supportDigits: cage.cells.filter(cell => grid.values[cell]).map(cell => ({ cell, digit: grid.values[cell] })),
       };
       continue;
     }
@@ -95,15 +99,29 @@ export function nextKillerStep(grid: Grid, cages: Cage[]): SolverResult {
         combinations.map(d => '{' + d.join(', ') + '}').join('; ') +
         '. Matching these distinct digits to the current cell candidates rules out the listed candidates: none can occur in a valid assignment of this cage.',
       placements: [], eliminations, cells: cage.cells,
+      supportCells: cage.cells,
+      supportDigits: cage.cells.flatMap((cell, index) => digitsOf(supports[index]).map(digit => ({ cell, digit }))),
     };
   }
   if (isSolved(grid)) return { status: 'solved', message: 'Solved: every row, column, box and cage satisfies its rules.' };
   if (cageStep) return { status: 'step', step: cageStep };
   const step = findNextStep(grid, false, logicalOrder); // No guesses or generated solution.
+  const pattern = step ? [...(step.primary ?? []), ...(step.secondary ?? []),
+    ...(step.colouring?.clusters ?? []).flatMap(cluster => [...cluster.dark, ...cluster.light]),
+    ...(step.links ?? []).flatMap(link => [...link.from, ...link.to]),
+  ].filter(item => !step.eliminations.some(e => e.cell === item.cell && e.digit === item.digit)) : [];
   if (step) return { status: 'step', step: {
     technique: TECHNIQUES.find(t => t.id === step.tech)?.name ?? step.tech,
     description: step.description, placements: step.placements, eliminations: step.eliminations,
     cells: [...new Set([...step.placements, ...step.eliminations, ...(step.primary ?? []), ...(step.secondary ?? [])].map(item => item.cell))],
+    supportCells: [...new Set([
+      ...pattern.map(item => item.cell),
+      ...(step.units ?? []).flatMap(band => UNITS[band.unit]),
+    ])],
+    supportDigits: [...pattern,
+      ...(step.tech === 'FULL_HOUSE' ? (step.units ?? []).flatMap(band => UNITS[band.unit])
+        .filter(cell => grid.values[cell]).map(cell => ({ cell, digit: grid.values[cell] })) : []),
+    ].filter(({ cell, digit }) => grid.values[cell] === digit || (!grid.values[cell] && !!(grid.cands[cell] & bit(digit)))),
   } };
   return { status: 'stalled', message: 'No further logical deduction was found using cage combinations and the imported techniques. This puzzle may need stronger techniques or may have multiple solutions. No guess or hidden solution digit has been used.' };
 }
