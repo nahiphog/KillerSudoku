@@ -1,4 +1,14 @@
 .board-actions { border-top: 1px solid #e2e6dd; padding: 0 0 20px; display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
+.board-panel { align-self: start; min-width: 0; }
+.board-stage { background: #fffefb; padding: 8px 0 12px; z-index: 2; }
+.board-panel[data-view="solver"] .board-stage { position: sticky; top: 8px; box-shadow: 0 8px 10px -10px #233c35; }
+.grid-frame { width: min(100%, calc(100svh - 250px)); margin: 0 auto; container-type: inline-size; }
+.grid-frame .board tr { height: calc(100cqw / 9); }
+.walkthrough-controls { font-size: 12px; }
+.walkthrough-controls .solver-actions button { padding: 9px 12px; }
+.board-panel > .solver-panel { margin-top: 12px; padding: 16px; }
+.board-panel #step-history { padding-left: 0; list-style-position: inside; }
+.board-panel #step-history h3 { display: inline; }
 .generation-toolbar { max-width: 1104px; margin: 20px auto 0; display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
 .generation-toolbar button { width: auto; margin: 0; }
 .generation-toolbar p { font-size: 12px; color: #657160; margin: 0; }

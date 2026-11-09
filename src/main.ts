@@ -17,7 +17,17 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     <div class="workspace">
       <section class="board-panel" aria-labelledby="board-title">
         <div class="panel-heading"><h1 id="board-title">Your grid</h1><span class="badge" id="badge">READY TO GENERATE</span></div>
-        <table class="board" role="grid" aria-label="Sudoku grid" aria-describedby="manual-help"><tbody>${Array.from({ length: 9 }, (_, r) => `<tr>${Array.from({ length: 9 }, (_, c) => `<td role="gridcell" tabindex="-1" aria-label="Row ${r + 1}, column ${c + 1}, empty"></td>`).join('')}</tr>`).join('')}</tbody></table>
+        <div class="board-stage">
+        <div class="grid-frame"><table class="board" role="grid" aria-label="Sudoku grid" aria-describedby="manual-help"><tbody>${Array.from({ length: 9 }, (_, r) => `<tr>${Array.from({ length: 9 }, (_, c) => `<td role="gridcell" tabindex="-1" aria-label="Row ${r + 1}, column ${c + 1}, empty"></td>`).join('')}</tr>`).join('')}</tbody></table></div>
+        <div class="walkthrough-controls">          <div class="solver-actions"><button id="next-step" type="button" disabled>Next step</button><button id="undo-step" type="button" disabled>Undo step</button><button id="reset-solver" type="button" disabled>Reset solver</button></div>
+          <label for="walkthrough">Solution walkthrough</label><input id="walkthrough" type="range" min="0" max="0" value="0" step="1" disabled aria-describedby="walkthrough-position"><output id="walkthrough-position" for="walkthrough">Step 0 of 0</output>
+</div>
+        </div>
+        <section class="solver-panel" aria-labelledby="solver-title"><h2 id="solver-title">Step-by-step solver</h2>
+          <p>Start with cages and sums only. Each step explains a placement or a candidate elimination. The solver has its own board; your manual entries are preserved.</p>
+          <p id="solver-message" role="status" aria-live="polite">Generate a grid to begin.</p>
+          <ol id="step-history" reversed aria-label="Deduction history"></ol>
+        </section>
         <div class="board-footer"><span class="status-dot" aria-hidden="true"></span><p id="status" role="status" aria-live="polite">Generate a grid with cages to get started.</p></div>
         <div class="board-actions"><button id="toggle-solution" type="button" disabled>Hide solution</button><label><input id="show-candidates" type="checkbox" disabled> Show candidates</label></div>
         <div class="play-modes" aria-label="Board view"><button id="manual-view" type="button" aria-pressed="true" disabled>Play manually</button><button id="solver-view" type="button" aria-pressed="false" disabled>View solver</button></div>
@@ -50,13 +60,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
           <p>Counts cover the complete verified solution, one count per deduction.</p>
           <table id="technique-tally" hidden><caption>Techniques used in the full solve</caption><thead><tr><th scope="col">Technique</th><th scope="col">Steps</th></tr></thead><tbody></tbody><tfoot><tr><th scope="row">Total</th><td id="tally-total"></td></tr></tfoot></table>
         </section>
-        <section class="solver-panel" aria-labelledby="solver-title"><h2 id="solver-title">Step-by-step solver</h2>
-          <p>Start with cages and sums only. Each step explains a placement or a candidate elimination. The solver has its own board; your manual entries are preserved.</p>
-          <div class="solver-actions"><button id="next-step" type="button" disabled>Next step</button><button id="undo-step" type="button" disabled>Undo step</button><button id="reset-solver" type="button" disabled>Reset solver</button></div>
-          <label for="walkthrough">Solution walkthrough</label><input id="walkthrough" type="range" min="0" max="0" value="0" step="1" disabled aria-describedby="walkthrough-position"><output id="walkthrough-position" for="walkthrough">Step 0 of 0</output>
-          <p id="solver-message" role="status" aria-live="polite">Generate a grid to begin.</p>
-          <ol id="step-history" reversed aria-label="Deduction history"></ol>
-        </section>
+
       </aside>
     </div>
   </main>
@@ -124,6 +128,7 @@ function updateSolverControls() {
   for (let i = 0; i < cells.length; i++) cells[i].tabIndex = solution && !busy && i === selectedCell ? 0 : -1;
 }
 function paint() {
+  document.querySelector('.board-panel')!.setAttribute('data-view', boardView);
   if (solution) renderBoard(revealSolution ? solution : boardView === 'manual' ? manualBoard.values : Array.from(solvingGrid.values), activeCages);
   updateSolverControls();
 }
