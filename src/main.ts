@@ -2,7 +2,7 @@ import './style.css';
 import './cages.css';
 import { cageOptionsError, DEFAULT_CAGE_SIZES, type Cage } from './engine/cages';
 import type { PuzzleOptions, VerifiedPuzzle } from './engine/verifiedGenerator';
-import { DIFFICULTIES, DIFFICULTY_TECHNIQUES, type Difficulty } from './engine/difficulty';
+import { type Difficulty } from './engine/difficulty';
 import { header, footer, setupAbout } from './shell';
 import { applyDeduction, startSolver, type Deduction } from './engine/killerSolver';
 import { cellName, digitsOf, type Grid } from './vendor/sudokui/board';
@@ -13,8 +13,8 @@ import { drawWalkthroughLinks } from './walkthroughLinks';
 import { scoredTally } from './engine/techniqueScores';
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
-  ${header}
-  <div class="generation-toolbar"><button id="generate" type="button">↻ Generate</button><button id="cancel-generation" type="button" hidden>Cancel generation</button><p>Uses the generation settings below.</p></div>
+  ${header.replace('<button id="about"', '<button id="open-settings" type="button" aria-haspopup="dialog">Settings</button><button id="about"')}
+  <div class="generation-toolbar"><button id="generate" type="button">↻ Generate</button><button id="cancel-generation" type="button" hidden>Cancel generation</button><p>Cage options are available in Settings.</p></div>
   <main>
     <div class="workspace">
       <section class="board-panel" aria-labelledby="board-title">
@@ -44,18 +44,6 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       </section>
       <aside>
         <section class="generate-panel"><h2>Generate a puzzle grid</h2><p>Every puzzle is verified to have one solution and a complete logical solve using cage combinations and Sudoku techniques.</p>
-          <fieldset id="settings"><legend>Generation settings</legend>
-            <label class="difficulty-label" for="difficulty">Difficulty</label>
-            <select id="difficulty" aria-describedby="difficulty-help">${DIFFICULTIES.map(level => `<option value="${level}">${level}</option>`).join('')}</select>
-            <p class="setting-help" id="difficulty-help">Easy: cage combinations, cage remainders and singles.</p>
-            <details class="difficulty-guide"><summary>How difficulty is rated</summary><p>The hardest technique used in the verified solve determines the level. Easier techniques are always tried first. Steps and cage sizes do not determine difficulty.</p>${DIFFICULTIES.map(level => `<p><strong>${level}:</strong> ${DIFFICULTY_TECHNIQUES[level].join(', ')}.</p>`).join('')}</details>
-            <label class="symmetry-option"><input id="symmetry" type="checkbox" checked> Rotationally symmetric cages</label>
-            <p class="setting-help">Cage shapes match after a 180° turn.</p>
-            <fieldset class="size-options"><legend>Allowed cells per cage</legend>
-              <div class="size-choices">${Array.from({ length: 8 }, (_, i) => i + 2).map(size => `<label><input type="checkbox" name="size" value="${size}" ${DEFAULT_CAGE_SIZES.includes(size) ? 'checked' : ''}><span>${size}</span></label>`).join('')}</div>
-            </fieldset>
-            <p class="setting-help">Only selected sizes will be used. Each cage has connected cells and no repeated digits.</p>
-          </fieldset>
           <p id="settings-error" class="error" role="alert" hidden></p>
           <p class="hint">Settings apply to the next generated grid.</p>
         </section>
@@ -68,8 +56,25 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       </aside>
     </div>
   </main>
+  <dialog id="settings-dialog" aria-labelledby="settings-title"><h2 id="settings-title">Settings</h2><p>Changes apply to the next generated puzzle. Any difficulty is accepted; every puzzle must still have a unique logical solution.</p>
+          <fieldset id="settings"><legend>Generation settings</legend>
+            <label class="symmetry-option"><input id="symmetry" type="checkbox" checked> Rotationally symmetric cages</label>
+            <p class="setting-help">Cage shapes match after a 180° turn.</p>
+            <fieldset class="size-options"><legend>Allowed cells per cage</legend>
+              <div class="size-choices">${Array.from({ length: 8 }, (_, i) => i + 2).map(size => `<label><input type="checkbox" name="size" value="${size}" ${DEFAULT_CAGE_SIZES.includes(size) ? 'checked' : ''}><span>${size}</span></label>`).join('')}</div>
+            </fieldset>
+            <p class="setting-help">Only selected sizes will be used. Each cage has connected cells and no repeated digits.</p>
+          </fieldset>
+<p id="cage-settings-error" class="error" role="alert" hidden></p><form method="dialog"><button autofocus>Done</button></form></dialog>
   ${footer}`;
 setupAbout();
+const settingsDialog = document.querySelector<HTMLDialogElement>('#settings-dialog')!;
+document.querySelector('#open-settings')!.addEventListener('click', () => settingsDialog.showModal());
+settingsDialog.addEventListener('click', event => {
+  if (event.target !== settingsDialog) return;
+  const bounds = settingsDialog.getBoundingClientRect();
+  if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) settingsDialog.close();
+});
 const button = document.querySelector<HTMLButtonElement>('#generate')!;
 const cancelGeneration = document.querySelector<HTMLButtonElement>('#cancel-generation')!;
 const settings = document.querySelector<HTMLFieldSetElement>('#settings')!;
@@ -237,13 +242,7 @@ candidateToggle.addEventListener('change', paint);
 resetButton.addEventListener('click', () => seekWalkthrough(0));
 undoButton.addEventListener('click', () => seekWalkthrough(walkthroughPosition - 1));
 nextButton.addEventListener('click', () => seekWalkthrough(walkthroughPosition + 1));
-const difficultySelect = document.querySelector<HTMLSelectElement>('#difficulty')!;
-difficultySelect.addEventListener('change', () => {
-  const level = difficultySelect.value as Difficulty;
-  document.querySelector('#difficulty-help')!.textContent = `${level}: ${DIFFICULTY_TECHNIQUES[level].join(', ')}. Generation must match this level exactly.`;
-});
 const options = (): PuzzleOptions => ({
-  difficulty: difficultySelect.value as Difficulty,
   symmetric: document.querySelector<HTMLInputElement>('#symmetry')!.checked,
   sizes: [...document.querySelectorAll<HTMLInputElement>('input[name="size"]:checked')].map(input => Number(input.value)),
 });
@@ -253,6 +252,8 @@ function validate() {
     ? 'Nine-cell cages all sum to 45 and cannot give a unique puzzle. Allow smaller cage sizes.' : null);
   errorText.textContent = error ?? '';
   errorText.hidden = !error;
+  const dialogError = document.querySelector<HTMLElement>('#cage-settings-error')!;
+  dialogError.textContent = error ?? ''; dialogError.hidden = !error;
   button.disabled = !!error || !!worker;
 }
 cancelGeneration.addEventListener('click', () => {
@@ -338,7 +339,7 @@ button.addEventListener('click', () => {
   const selectedOptions = options();
   settings.disabled = true;
   button.disabled = true;
-  status.textContent = `Searching for a ${selectedOptions.difficulty} puzzle and verifying every logical step…`;
+  status.textContent = `Searching for a puzzle and verifying every logical step…`;
   cancelGeneration.hidden = false;
   const cleanup = () => {
     worker?.terminate();
@@ -360,10 +361,10 @@ button.addEventListener('click', () => {
     worker.onmessage = (event: MessageEvent<Partial<VerifiedPuzzle> & { error?: string; progress?: number }>) => {
       const { values, cages, error, progress, proofSteps, difficulty, hardestTechnique: hardest, deductions, techniqueTally, elapsedMilliseconds, attempts } = event.data;
       if (progress !== undefined) {
-        status.textContent = `Checking candidate ${progress}: seeking ${selectedOptions.difficulty} difficulty with a complete logical solve.`;
+        status.textContent = `Checking candidate ${progress}: verifying a unique solution and complete logical solve.`;
         return;
       }
-      if (error || !values || !cages || !proofSteps || !difficulty || difficulty !== selectedOptions.difficulty || !hardest || !deductions || deductions.length !== proofSteps || !techniqueTally || elapsedMilliseconds === undefined) { fail(error ?? 'Unable to verify the requested difficulty. Try again.'); return; }
+      if (error || !values || !cages || !proofSteps || !difficulty || !hardest || !deductions || deductions.length !== proofSteps || !techniqueTally || elapsedMilliseconds === undefined) { fail(error ?? 'Unable to verify the puzzle. Try again.'); return; }
       document.querySelector('#construction-time')!.textContent = 'Constructed and logically verified in ' + (elapsedMilliseconds / 1000).toFixed(2) + ' seconds · ' + attempts + ' candidate puzzles checked.';
       const tally = document.querySelector<HTMLTableElement>('#technique-tally')!;
       tally.hidden = false;

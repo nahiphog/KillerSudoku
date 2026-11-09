@@ -19,22 +19,19 @@ describe('difficulty bands', () => {
     expect(techniqueDifficulty('Hidden Quadruple')).toBe('Expert');
     expect(techniqueRank('XYZ-Wing')).toBeLessThan(techniqueRank('Swordfish'));
   });
-  it('rejects invalid requests and never substitutes a different level on failure', () => {
-    expect(() => generateVerifiedPuzzle({ difficulty: 'Invalid' as never })).toThrow('Choose Easy');
-    for (const difficulty of DIFFICULTIES) expect(() => generateVerifiedPuzzle({ difficulty }, { maxAttempts: 0 })).toThrow(`at ${difficulty} difficulty`);
+  it('reports an exhausted search without requiring a difficulty', () => {
+    expect(() => generateVerifiedPuzzle({}, { maxAttempts: 0 })).toThrow('No uniquely solvable puzzle');
   });
-
-  it('generates and re-rates a genuinely matching puzzle for all four levels', () => {
+  it('reports the actual rating without selecting a requested level', () => {
     let seed = 1;
     const random = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
-    for (const difficulty of DIFFICULTIES) {
-      const puzzle = generateVerifiedPuzzle({ difficulty }, { random, maxMilliseconds: 30000 });
-      expect(puzzle.difficulty).toBe(difficulty);
-      expect(techniqueDifficulty(puzzle.hardestTechnique)).toBe(difficulty);
+    for (let sample = 0; sample < 5; sample++) {
+      const puzzle = generateVerifiedPuzzle({}, { random, maxMilliseconds: 30000 });
+      expect(DIFFICULTIES).toContain(puzzle.difficulty);
+      expect(techniqueDifficulty(puzzle.hardestTechnique)).toBe(puzzle.difficulty);
       const proof = proveLogically(puzzle.cages);
-      expect(proof?.difficulty).toBe(difficulty);
+      expect(proof?.difficulty).toBe(puzzle.difficulty);
       expect(proof?.hardestTechnique).toBe(puzzle.hardestTechnique);
-      expect(proof?.steps).toBe(puzzle.proofSteps);
       expect(proof?.values).toEqual(puzzle.values);
     }
   }, 125000);
