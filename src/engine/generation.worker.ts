@@ -1,7 +1,6 @@
-import { generateVerifiedPuzzle } from './verifiedGenerator';
-import type { CageOptions } from './cages';
+import { generateVerifiedPuzzle, type PuzzleOptions } from './verifiedGenerator';
 
-self.onmessage = (event: MessageEvent<CageOptions>) => {
+self.onmessage = (event: MessageEvent<PuzzleOptions>) => {
   try {
     self.postMessage(generateVerifiedPuzzle(event.data, {
       onProgress: attempt => self.postMessage({ progress: attempt }),

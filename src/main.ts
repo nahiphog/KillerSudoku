@@ -1,6 +1,8 @@
 import './style.css';
 import './cages.css';
-import { cageOptionsError, DEFAULT_CAGE_SIZES, type Cage, type CageOptions } from './engine/cages';
+import { cageOptionsError, DEFAULT_CAGE_SIZES, type Cage } from './engine/cages';
+import type { PuzzleOptions, VerifiedPuzzle } from './engine/verifiedGenerator';
+import { DIFFICULTIES, DIFFICULTY_TECHNIQUES, type Difficulty } from './engine/difficulty';
 import { header, footer, setupAbout } from './shell';
 import { applyDeduction, startSolver, type Deduction, type SolverResult } from './engine/killerSolver';
 import { cellName, digitsOf, type Grid } from './vendor/sudokui/board';
@@ -18,7 +20,11 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       </section>
       <aside>
         <section class="generate-panel"><h2>Generate a puzzle grid</h2><p>Every puzzle is verified to have one solution and a complete logical solve using cage combinations and Sudoku techniques.</p>
-          <fieldset id="settings"><legend>Cage settings</legend>
+          <fieldset id="settings"><legend>Generation settings</legend>
+            <label class="difficulty-label" for="difficulty">Difficulty</label>
+            <select id="difficulty" aria-describedby="difficulty-help">${DIFFICULTIES.map(level => `<option value="${level}">${level}</option>`).join('')}</select>
+            <p class="setting-help" id="difficulty-help">Easy: cage combinations, cage remainders and singles.</p>
+            <details class="difficulty-guide"><summary>How difficulty is rated</summary><p>The hardest technique used in the verified solve determines the level. Easier techniques are always tried first. Steps and cage sizes do not determine difficulty.</p>${DIFFICULTIES.map(level => `<p><strong>${level}:</strong> ${DIFFICULTY_TECHNIQUES[level].join(', ')}.</p>`).join('')}</details>
             <label class="symmetry-option"><input id="symmetry" type="checkbox" checked> Rotationally symmetric cages</label>
             <p class="setting-help">Cage shapes match after a 180° turn.</p>
             <fieldset class="size-options"><legend>Allowed cells per cage</legend>
@@ -50,6 +56,8 @@ const errorText = document.querySelector<HTMLParagraphElement>('#settings-error'
 const cells = [...document.querySelectorAll<HTMLTableCellElement>('.board td')];
 let generation = 0;
 let verifiedSteps = 0;
+let verifiedDifficulty: Difficulty = 'Easy';
+let hardestTechnique = '';
 let worker: Worker | null = null;
 let solution: number[] | null = null;
 let activeCages: Cage[] = [];
@@ -83,7 +91,7 @@ function resetSolving() {
   solverWorker?.terminate(); solverWorker = null;
   solvingGrid = startSolver(); history.length = 0; solverStopped = false;
   historyList.replaceChildren();
-  solverMessage.textContent = `Ready. Verified unique solution in ${verifiedSteps} logical steps. Next step starts from cages and sums only.`;
+  solverMessage.textContent = `Ready. ${verifiedDifficulty} · hardest technique: ${hardestTechnique}. Verified unique solution in ${verifiedSteps} logical steps. Next step starts from cages and sums only.`;
 }
 toggleSolution.addEventListener('click', () => {
   revealSolution = !revealSolution;
@@ -136,7 +144,13 @@ nextButton.addEventListener('click', () => {
   solverWorker.onerror = () => { solverMessage.textContent = 'The solver could not complete this step. Please try again.'; finish(); };
   solverWorker.postMessage({ grid: solvingGrid, cages: activeCages });
 });
-const options = (): CageOptions => ({
+const difficultySelect = document.querySelector<HTMLSelectElement>('#difficulty')!;
+difficultySelect.addEventListener('change', () => {
+  const level = difficultySelect.value as Difficulty;
+  document.querySelector('#difficulty-help')!.textContent = `${level}: ${DIFFICULTY_TECHNIQUES[level].join(', ')}. Generation must match this level exactly.`;
+});
+const options = (): PuzzleOptions => ({
+  difficulty: difficultySelect.value as Difficulty,
   symmetric: document.querySelector<HTMLInputElement>('#symmetry')!.checked,
   sizes: [...document.querySelectorAll<HTMLInputElement>('input[name="size"]:checked')].map(input => Number(input.value)),
 });
@@ -205,7 +219,7 @@ button.addEventListener('click', () => {
   const selectedOptions = options();
   settings.disabled = true;
   button.disabled = true;
-  status.textContent = 'Searching for a uniquely solvable puzzle and verifying every logical step…';
+  status.textContent = `Searching for a ${selectedOptions.difficulty} puzzle and verifying every logical step…`;
   cancelGeneration.hidden = false;
   const cleanup = () => {
     worker?.terminate();
@@ -224,19 +238,20 @@ button.addEventListener('click', () => {
   try {
     worker = new Worker(new URL('./engine/generation.worker.ts', import.meta.url), { type: 'module' });
     updateSolverControls();
-    worker.onmessage = (event: MessageEvent<{ values?: number[]; cages?: Cage[]; error?: string; progress?: number; proofSteps?: number }>) => {
-      const { values, cages, error, progress, proofSteps } = event.data;
+    worker.onmessage = (event: MessageEvent<Partial<VerifiedPuzzle> & { error?: string; progress?: number }>) => {
+      const { values, cages, error, progress, proofSteps, difficulty, hardestTechnique: hardest } = event.data;
       if (progress !== undefined) {
-        status.textContent = `Checking candidate ${progress}: verifying a complete logical solve. Only verified puzzles are accepted.`;
+        status.textContent = `Checking candidate ${progress}: seeking ${selectedOptions.difficulty} difficulty with a complete logical solve.`;
         return;
       }
-      if (error || !values || !cages || !proofSteps) { fail(error ?? 'Unable to verify a puzzle. Try again.'); return; }
+      if (error || !values || !cages || !proofSteps || !difficulty || difficulty !== selectedOptions.difficulty || !hardest) { fail(error ?? 'Unable to verify the requested difficulty. Try again.'); return; }
       verifiedSteps = proofSteps;
+      verifiedDifficulty = difficulty; hardestTechnique = hardest;
       solution = values; activeCages = cages; resetSolving(); revealSolution = true; candidateToggle.checked = false;
       paint();
       generation++;
-      document.querySelector('#badge')!.textContent = `${cages.length} CAGES`;
-      status.textContent = `Puzzle ${generation} · ${cages.length} ${selectedOptions.symmetric ? 'symmetric' : 'connected'} cages · unique solution · ${proofSteps} logical steps verified.`;
+      document.querySelector('#badge')!.textContent = `${difficulty.toUpperCase()} · ${cages.length} CAGES`;
+      status.textContent = `Puzzle ${generation} · ${difficulty} · hardest: ${hardest} · unique solution · ${proofSteps} logical steps verified.`;
       cleanup();
     };
     worker.onerror = () => fail('Unable to generate a grid. Please reload and try again.');

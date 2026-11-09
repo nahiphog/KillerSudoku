@@ -32,7 +32,7 @@ export function cageOptionsError(options: CageOptions): string | null {
 }
 
 /** Bounded backtracking: place whole cages (and their rotations) atomically. */
-export function generateCages(values: ArrayLike<number>, optionsOrRandom: CageOptions | (() => number) = {}, rng = Math.random): Cage[] {
+export function generateCages(values: ArrayLike<number>, optionsOrRandom: CageOptions | (() => number) = {}, rng = Math.random, preferSmall = false): Cage[] {
   const options = typeof optionsOrRandom === 'function' ? {} : optionsOrRandom;
   const random = typeof optionsOrRandom === 'function' ? optionsOrRandom : rng;
   if (values.length !== 81 || Array.from(values).some(v => !Number.isInteger(v) || v < 1 || v > 9)
@@ -76,6 +76,7 @@ export function generateCages(values: ArrayLike<number>, optionsOrRandom: CageOp
     const anchor = central ? 40 : Math.min(...free);
     const seen = new Set<string>();
     const targetSizes = shuffle(sizes.filter(s => !central || s % 2 === 1));
+    if (preferSmall && random() < 0.9) targetSizes.sort((a, b) => a - b);
     function grow(shape: number[], target: number): boolean {
       if (--budget <= 0) return false;
       const key = shape.slice().sort((a, b) => a - b).join(',');

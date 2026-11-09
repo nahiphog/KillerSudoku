@@ -43,9 +43,9 @@ export const TECHNIQUES: readonly { id: string; name: string; find: Finder }[] =
   { id: 'BRUTE_FORCE', name: 'Brute Force', find: bruteForce },
 ];
 
-export function findNextStep(grid: Grid, allowBruteForce = false): Step | null {
+export function findNextStep(grid: Grid, allowBruteForce = false, order = TECHNIQUES): Step | null {
   if (isBroken(grid) || isSolved(grid)) return null;
-  for (const technique of TECHNIQUES) {
+  for (const technique of order) {
     if (technique.id === 'BRUTE_FORCE' && !allowBruteForce) continue;
     const step = technique.find(grid);
     if (step) return withHouses(step, grid);

@@ -7,6 +7,12 @@
 .solver-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .solver-actions button { width: auto; padding: 10px 12px; margin: 8px 0; font-size: 12px; }
 #cancel-generation[hidden] { display: none; }
+.difficulty-label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+#difficulty { width: 100%; padding: 11px; border: 1px solid #899b7d; border-radius: 6px; background: #fff; color: #233c35; font: inherit; font-size: 14px; }
+#difficulty:focus-visible { outline: 3px solid #879c5e; outline-offset: 2px; }
+.difficulty-guide { font-size: 12px; margin-bottom: 22px; }
+.difficulty-guide summary { cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.difficulty-guide p { font-size: 11px; }
 #solver-message { border-left: 3px solid #819966; padding-left: 12px; }
 #step-history { max-height: 480px; overflow-y: auto; padding-left: 24px; }
 #step-history li { border-top: 1px solid #dedfd4; padding: 12px 0; }

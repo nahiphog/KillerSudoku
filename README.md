@@ -25,7 +25,16 @@ Rotational symmetry is enabled by default: rotating a cage's cells 180° produce
 
 `src/engine/cages.ts` constructs candidate layouts without changing the completed grid. Cage pairs are placed together and checked for distinct digits on both sides. `src/engine/verifiedGenerator.ts` accepts a candidate only after the exact step solver solves all 81 cells from blank using cages and sums alone. Every step preserves the solution set, so a complete logical path proves uniqueness as well as solvability. The final solution is validated and compared with the construction grid only after the proof is complete. No brute-force solver, guessing, or solution counter is used for acceptance.
 
-Generation favors smaller permitted cages for stronger clues and also tries the full selected size range. Selected sizes are allowed sizes, not required quotas. A worker searches up to 300 candidates or 45 seconds and reports progress; Cancel stops it immediately. Stalled, contradictory, incomplete, or timed-out proofs are rejected. If no puzzle qualifies, the previous puzzle is preserved. Nine-cell-only cages are rejected because their sum is always 45 and digit permutations prevent uniqueness. Restrictive settings may have no qualifying result; constraints are never silently relaxed.
+Generation favors smaller permitted cages for stronger clues and also tries the full selected size range. Selected sizes are allowed sizes, not required quotas. A worker searches up to 1,500 candidates or 45 seconds and reports progress; Cancel stops it immediately. Stalled, contradictory, incomplete, timed-out, or wrong-difficulty proofs are rejected. If no puzzle qualifies, the previous puzzle is preserved. Nine-cell-only cages are rejected because their sum is always 45 and digit permutations prevent uniqueness. Restrictive settings may have no qualifying result; constraints are never silently relaxed.
+
+Choose **Easy**, **Medium**, **Hard**, or **Expert** before generating (default: Easy). These are app-specific technique bands, not sudokUI's score-based rating:
+
+- Easy: cage combinations/remainders, Full House, Naked Single, Hidden Single.
+- Medium: locked candidates, naked/hidden pairs and triples.
+- Hard: Naked Quadruple, X-Wing, W-Wing, XY-Wing, XYZ-Wing.
+- Expert: Hidden Quadruple, Swordfish, Jellyfish, Empty Rectangle, Remote Pairs.
+
+The hardest technique used in the complete verified path determines the rating; the step count and cage sizes do not. The solver exhausts easier bands before trying harder ones, and both generation and interactive solving use the same order. Generation requires an exact level match, never an easier substitute. The board badge, result, and solver introduction display the accepted level and hardest technique. Changing the selector affects only the next generation.
 
 The header's **About** button opens a rules dialog (Close, Escape, or click the backdrop to dismiss). **Techniques** opens the separate `techniques.html` page with all 20 techniques and brief descriptions. Both pages are included in the Vite production build and work at the GitHub Pages base path.
 

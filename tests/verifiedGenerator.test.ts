@@ -22,6 +22,9 @@ describe('verified puzzle generation', () => {
     const proof = proveLogically(puzzle.cages);
     expect(proof?.values).toEqual(puzzle.values);
     expect(proof?.steps).toBe(puzzle.proofSteps);
+    expect(proof?.difficulty).toBe('Easy');
+    expect(proof?.difficulty).toBe(puzzle.difficulty);
+    expect(proof?.hardestTechnique).toBe(puzzle.hardestTechnique);
     for (const unit of UNITS) expect(new Set(unit.map(i => puzzle.values[i])).size).toBe(9);
     for (const cage of puzzle.cages) {
       expect([2, 3, 4, 5, 6, 7]).toContain(cage.cells.length);

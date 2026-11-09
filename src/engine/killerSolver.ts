@@ -2,6 +2,7 @@ import { bit, cloneGrid, digitsOf, emptyGrid, isBroken, isSolved, setValue, UNIT
 import { findNextStep, TECHNIQUES } from './solver';
 import { combinationTable } from './combinations';
 import type { Cage } from './cages';
+import { techniqueRank } from './difficulty';
 
 export interface Deduction {
   technique: string;
@@ -16,6 +17,9 @@ export type SolverResult =
 
 const tables = new Map(Array.from({ length: 8 }, (_, i) => [i + 2, combinationTable(i + 2)]));
 export const startSolver = (): Grid => emptyGrid();
+// Exhaust easier bands before trying a harder deduction, for meaningful ratings.
+const logicalOrder = TECHNIQUES.filter(t => t.id !== 'BRUTE_FORCE')
+  .slice().sort((a, b) => techniqueRank(a.name) - techniqueRank(b.name));
 
 /** Perfect matching: can each cage cell take a different digit from this set?
  * An optional forced edge tests whether a particular candidate has support.
@@ -95,7 +99,7 @@ export function nextKillerStep(grid: Grid, cages: Cage[]): SolverResult {
   }
   if (isSolved(grid)) return { status: 'solved', message: 'Solved: every row, column, box and cage satisfies its rules.' };
   if (cageStep) return { status: 'step', step: cageStep };
-  const step = findNextStep(grid); // No Sudoku-only brute force or generated solution is used.
+  const step = findNextStep(grid, false, logicalOrder); // No guesses or generated solution.
   if (step) return { status: 'step', step: {
     technique: TECHNIQUES.find(t => t.id === step.tech)?.name ?? step.tech,
     description: step.description, placements: step.placements, eliminations: step.eliminations,
