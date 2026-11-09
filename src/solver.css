@@ -42,4 +42,8 @@
 .board td.deduction-cell { box-shadow: inset 0 0 0 2px #d99d35; }
 .cell-candidates { position: absolute; inset: 15px 6px 4px; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); font: 10px/1 sans-serif; color: #526950; }
 .cell-candidates span { display: grid; place-items: center; }
+.placed-digit { color: #075cba; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
+.removed-candidate { color: #b42332; font-weight: 800; text-decoration: line-through; text-decoration-thickness: 1.5px; }
+.change-legend { display: none; flex-wrap: wrap; gap: 16px; margin-top: 8px; font-size: 11px; }
+.board-panel[data-view="solver"] .change-legend { display: flex; }
 @media (max-width: 400px) { .cell-candidates { font-size: 8px; inset: 13px 5px 3px; } }

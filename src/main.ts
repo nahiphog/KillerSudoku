@@ -21,6 +21,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         <div class="grid-frame"><table class="board" role="grid" aria-label="Sudoku grid" aria-describedby="manual-help"><tbody>${Array.from({ length: 9 }, (_, r) => `<tr>${Array.from({ length: 9 }, (_, c) => `<td role="gridcell" tabindex="-1" aria-label="Row ${r + 1}, column ${c + 1}, empty"></td>`).join('')}</tr>`).join('')}</tbody></table></div>
         <div class="walkthrough-controls">          <div class="solver-actions"><button id="next-step" type="button" disabled>Next step</button><button id="undo-step" type="button" disabled>Undo step</button><button id="reset-solver" type="button" disabled>Reset solver</button></div>
           <label for="walkthrough">Solution walkthrough</label><input id="walkthrough" type="range" min="0" max="0" value="0" step="1" disabled aria-describedby="walkthrough-position"><output id="walkthrough-position" for="walkthrough">Step 0 of 0</output>
+          <div class="change-legend"><span class="placed-digit">Placed digit</span><span class="removed-candidate">Removed candidate</span></div>
 </div>
         </div>
         <section class="solver-panel" aria-labelledby="solver-title"><h2 id="solver-title">Step-by-step solver</h2>
@@ -254,6 +255,8 @@ settings.addEventListener('change', validate);
 function renderBoard(values: number[], cages: Cage[]) {
   const cageForCell = new Map(cages.flatMap(cage => cage.cells.map(cell => [cell, cage] as const)));
   const manual = !revealSolution && boardView === 'manual';
+  const currentStep = !revealSolution && boardView === 'solver' ? history[walkthroughPosition - 1]?.step : undefined;
+  const beforeStep = currentStep ? (walkthroughPosition > 1 ? history[walkthroughPosition - 2].after : startSolver()) : undefined;
   const conflicts = manual ? manualStatus(manualBoard, cages).conflicts : new Set<number>();
   cells.forEach((cell, i) => {
     const cage = cageForCell.get(i)!;
@@ -261,6 +264,10 @@ function renderBoard(values: number[], cages: Cage[]) {
     const digit = document.createElement('span');
     digit.className = 'cell-digit';
     digit.textContent = values[i] ? String(values[i]) : '';
+    const placed = !!currentStep?.placements.some(p => p.cell === i && p.digit === values[i]);
+    digit.classList.toggle('placed-digit', placed);
+    // Include peer candidates removed automatically when a digit is placed.
+    const removed = beforeStep && !values[i] ? digitsOf(beforeStep.cands[i] & ~solvingGrid.cands[i]) : [];
     cell.append(digit);
     cell.setAttribute('aria-label', `Row ${Math.floor(i / 9) + 1}, column ${i % 9 + 1}, ${values[i] || 'empty'}, cage sum ${cage.sum}, ${cage.cells.length} cells`);
     cell.classList.toggle('deduction-cell', !revealSolution && boardView === 'solver' && !!history[walkthroughPosition - 1]?.step.cells.includes(i));
@@ -268,15 +275,20 @@ function renderBoard(values: number[], cages: Cage[]) {
     cell.classList.toggle('conflict-cell', conflicts.has(i));
     cell.setAttribute('aria-selected', String(manual && selectedCell === i));
     if (conflicts.has(i)) cell.setAttribute('aria-label', cell.getAttribute('aria-label') + ', rule conflict');
-    if (!revealSolution && !values[i] && (manual ? !!manualBoard.notes[i] : candidateToggle.checked)) {
+    if (placed) cell.setAttribute('aria-label', cell.getAttribute('aria-label') + ', placed this step');
+    if (!revealSolution && !values[i] && (manual ? !!manualBoard.notes[i] : candidateToggle.checked || removed.length > 0)) {
       const notes = document.createElement('span'); notes.className = 'cell-candidates';
-      const candidates = digitsOf(manual ? manualBoard.notes[i] : solvingGrid.cands[i]);
+      const candidates = digitsOf(manual ? manualBoard.notes[i] : candidateToggle.checked ? solvingGrid.cands[i] : 0);
       for (let d = 1; d <= 9; d++) {
-        const mark = document.createElement('span'); mark.textContent = candidates.includes(d) ? String(d) : ''; notes.append(mark);
+        const mark = document.createElement('span');
+        mark.textContent = candidates.includes(d) || removed.includes(d) ? String(d) : '';
+        mark.classList.toggle('removed-candidate', removed.includes(d));
+        notes.append(mark);
       }
       cell.append(notes);
       cell.setAttribute('aria-label', cell.getAttribute('aria-label') + (manual ? ', pencil marks ' : ', candidates ') + candidates.join(', '));
     }
+    if (removed.length) cell.setAttribute('aria-label', cell.getAttribute('aria-label') + ', removed this step: ' + removed.join(', '));
     const outline = document.createElement('span');
     outline.className = 'cage-outline';
     outline.setAttribute('aria-hidden', 'true');
