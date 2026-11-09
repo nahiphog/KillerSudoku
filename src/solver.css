@@ -1,8 +1,9 @@
 .board-actions { border-top: 1px solid #e2e6dd; padding: 0 0 20px; display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
-.board-panel { align-self: start; min-width: 0; }
+.board-panel { align-self: start; min-width: 0; padding-left: 18px; padding-right: 18px; }
+@media (min-width: 761px) { .workspace { grid-template-columns: minmax(0, 1.7fr) minmax(300px, 1fr); gap: 28px; } }
 .board-stage { background: #fffefb; padding: 8px 0 12px; z-index: 2; }
 .board-panel[data-view="solver"] .board-stage { position: sticky; top: 8px; box-shadow: 0 8px 10px -10px #233c35; }
-.grid-frame { position: relative; width: min(100%, calc(100svh - 285px)); margin: 0 auto; container-type: inline-size; }
+.grid-frame { position: relative; width: min(100%, calc(100svh - 190px)); margin: 0 auto; container-type: inline-size; }
 .candidate-links { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 3; overflow: visible; }
 .candidate-links path { fill: none; stroke: #7739a5; stroke-width: 1.8; stroke-linecap: round; }
 .candidate-links .link-halo { stroke: #fff; stroke-width: 4; }
@@ -15,7 +16,8 @@
 #link-legend .weak-key::before { border-top-style: dashed; }
 .grid-frame .board tr { height: calc(100cqw / 9); }
 .walkthrough-controls { font-size: 12px; }
-.walkthrough-controls .solver-actions button { padding: 9px 12px; }
+.walkthrough-controls .solver-actions button { padding: 7px 10px; margin: 4px 0; }
+.walkthrough-controls #walkthrough { min-height: 28px; margin: 0; }
 .board-panel > .solver-panel { margin-top: 12px; padding: 16px; }
 .board-panel #step-history { padding-left: 0; list-style-position: inside; }
 .board-panel #step-history h3 { display: inline; }
@@ -25,7 +27,7 @@
 #technique-tally { width: 100%; border-collapse: collapse; font-size: 12px; }
 #technique-tally caption { text-align: left; margin-bottom: 12px; }
 #technique-tally th, #technique-tally td { padding: 9px 4px; border-bottom: 1px solid #dedfd4; text-align: left; }
-#technique-tally td, #technique-tally thead th:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+#technique-tally td, #technique-tally thead th:not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; }
 #walkthrough { display: block; width: 100%; min-height: 36px; margin: 8px 0; accent-color: #2f503d; cursor: pointer; }
 #walkthrough-position { display: block; font-size: 12px; font-variant-numeric: tabular-nums; }
 @media (max-width: 1180px) { .generation-toolbar { margin-left: 35px; margin-right: 35px; } }
@@ -50,8 +52,8 @@
 #step-history h3 { font-size: 14px; margin: 0; }
 .deduction-changes { color: #426035; }
 .board td.deduction-cell { box-shadow: inset 0 0 0 2px #d99d35; }
-.cell-candidates { position: absolute; inset: 15px 6px 4px; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); font: 10px/1 sans-serif; color: #526950; }
-.cell-candidates span { display: grid; place-items: center; }
+.cell-candidates { position: absolute; inset: 15px 5px 4px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, 1fr)); font: min(11px, calc((100cqw / 9 - 23px) / 3))/1 sans-serif; color: #526950; }
+.cell-candidates span { display: grid; place-items: center; min-width: 0; min-height: 0; }
 .placed-digit { color: #075cba; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
 .removed-candidate { color: #b42332; font-weight: 800; text-decoration: line-through; text-decoration-thickness: 1.5px; }
 .support-digit { color: #7739a5; font-weight: 800; text-decoration: underline dotted; text-underline-offset: 2px; }
@@ -59,4 +61,9 @@
 .board td.support-cell .cage-sum { color: #7739a5; }
 .change-legend { display: none; flex-wrap: wrap; gap: 16px; margin-top: 8px; font-size: 11px; }
 .board-panel[data-view="solver"] .change-legend { display: flex; }
-@media (max-width: 400px) { .cell-candidates { font-size: 8px; inset: 13px 5px 3px; } }
+@media (max-width: 400px) {
+  main { margin-left: 10px; margin-right: 10px; }
+  .board-panel { padding-left: 10px; padding-right: 10px; }
+  .cell-candidates { inset: 13px 4px 3px; font-size: min(10px, calc((100cqw / 9 - 20px) / 3)); }
+  #technique-tally { font-size: 11px; }
+}

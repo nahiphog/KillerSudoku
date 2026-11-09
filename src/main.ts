@@ -10,6 +10,7 @@ import './solver.css';
 import { newManualBoard, enterManualDigit, eraseManualCell, manualStatus, moveSelection } from './engine/manualPlay';
 import './manual.css';
 import { drawWalkthroughLinks } from './walkthroughLinks';
+import { scoredTally } from './engine/techniqueScores';
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   ${header}
@@ -60,8 +61,8 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         </section>
         <section class="solver-panel" aria-labelledby="statistics-title"><h2 id="statistics-title">Puzzle statistics</h2>
           <p id="construction-time">Generate a puzzle to see construction time and technique counts.</p>
-          <p>Counts cover the complete verified solution, one count per deduction.</p>
-          <table id="technique-tally" hidden><caption>Techniques used in the full solve</caption><thead><tr><th scope="col">Technique</th><th scope="col">Steps</th></tr></thead><tbody></tbody><tfoot><tr><th scope="row">Total</th><td id="tally-total"></td></tr></tfoot></table>
+          <p>Counts cover the complete verified solution. Rating is per use; score is rating × uses. Sudoku ratings follow the imported engine; both cage techniques rate 3. The puzzle level still reflects its hardest logical technique.</p>
+          <table id="technique-tally" hidden><caption>Techniques used, easiest first</caption><thead><tr><th scope="col">Technique</th><th scope="col">Rating</th><th scope="col">Uses</th><th scope="col">Score</th></tr></thead><tbody></tbody><tfoot><tr><th scope="row" colspan="2">Total</th><td id="tally-total"></td><td id="tally-score"></td></tr></tfoot></table>
         </section>
 
       </aside>
@@ -367,12 +368,15 @@ button.addEventListener('click', () => {
       const tally = document.querySelector<HTMLTableElement>('#technique-tally')!;
       tally.hidden = false;
       const body = tally.tBodies[0]; body.replaceChildren();
-      for (const [technique, count] of Object.entries(techniqueTally)) {
+      const scores = scoredTally(techniqueTally);
+      for (const { technique, count, rating, score } of scores) {
         const row = body.insertRow();
         const name = document.createElement('th'); name.scope = 'row'; name.textContent = technique;
-        row.append(name); row.insertCell().textContent = String(count);
+        row.append(name);
+        for (const value of [rating, count, score]) row.insertCell().textContent = String(value);
       }
       document.querySelector('#tally-total')!.textContent = String(proofSteps);
+      document.querySelector('#tally-score')!.textContent = String(scores.reduce((sum, row) => sum + row.score, 0));
       verifiedSteps = proofSteps;
       verifiedDifficulty = difficulty; hardestTechnique = hardest;
       solution = values; activeCages = cages; resetSolving(deductions); revealSolution = false; candidateToggle.checked = false;
