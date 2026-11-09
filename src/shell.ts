@@ -1,7 +1,7 @@
 export const header = `
 <header class="site-header">
   <a class="brand" href="./"><span class="brand-icon" aria-hidden="true">▦</span> Killer Sudoku</a>
-  <nav aria-label="Main navigation"><a href="./techniques.html">Techniques</a><button id="about" type="button">About</button></nav>
+  <nav aria-label="Main navigation"><a href="./techniques.html">Techniques</a><a href="./combinations.html">Combinations</a><button id="about" type="button">About</button></nav>
 </header>`;
 export const footer = `
 <footer><span>Built one possibility at a time.</span><span>Solving engine adapted from <a href="https://github.com/AImenes/sudokUI" target="_blank" rel="noreferrer">sudokUI</a> · GPL-3.0</span></footer>

@@ -27,4 +27,6 @@ Rotational symmetry is enabled by default: rotating a cage's cells 180° produce
 
 The header's **About** button opens a rules dialog (Close, Escape, or click the backdrop to dismiss). **Techniques** opens the separate `techniques.html` page with all 20 techniques and brief descriptions. Both pages are included in the Vite production build and work at the GitHub Pages base path.
 
+**Combinations** opens `combinations.html`, the full combinations reference with eight tables for 2–9 cells. All 502 distinct-digit combinations are calculated from digits 1–9 and grouped into 120 clue sums. Jump links navigate between tables, and unique digit sets are marked. The page links to the requested Kakuro Conquest reference; no external data request is required to display the tables.
+
 Current scope: completed grid generation, cage generation, and standard Sudoku solver imports. Cage-aware solving, puzzle uniqueness checks, and a solver interface await further instructions. The current solving engine operates on standard Sudoku only; generated cages are not rated or checked for a unique solution after hiding the digits.

@@ -1,0 +1,26 @@
+.combinations-page h1 { max-width: 850px; font-size: clamp(30px, 4.4vw, 48px); }
+.reference-source, .reference-key { font-size: 12px; line-height: 1.8; color: #657160; }
+.reference-source a { text-underline-offset: 3px; }
+.combination-jumps { display: flex; flex-wrap: wrap; gap: 9px; margin: 26px 0 18px; }
+.combination-jumps a { padding: 9px 14px; border: 1px solid #c6d1ba; border-radius: 6px; background: #fff; text-decoration: none; font-size: 13px; }
+.combination-jumps a:hover { background: #e8eddf; }
+.combination-section { margin: 38px 0; scroll-margin-top: 20px; }
+.combination-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.combination-heading h2 { font-size: 24px; }
+.combination-heading a { font-size: 12px; }
+.combination-table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #d5dcd1; font-size: 14px; }
+.combination-table caption { text-align: left; font-size: 12px; color: #657160; padding: 12px 0 16px; }
+.combination-table th, .combination-table td { padding: 14px 18px; text-align: left; border-bottom: 1px solid #e2e6dd; vertical-align: top; }
+.combination-table thead th { background: #e8eddf; font-size: 12px; }
+.combination-table th:first-child { width: 100px; }
+.combination-table tbody th { font-variant-numeric: tabular-nums; color: #2f503d; }
+.digit-sets { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.digit-set { white-space: nowrap; font-variant-numeric: tabular-nums; background: #f5f6f2; padding: 4px 8px; border-radius: 4px; }
+.unique-tag { display: inline-block; padding: 3px 7px; font-size: 10px; font-weight: 600; border-radius: 4px; background: #e8eddf; color: #426035; }
+@media (max-width: 600px) {
+  .combination-table th, .combination-table td { padding: 11px 9px; }
+  .combination-table th:first-child { width: 65px; }
+  .digit-set { font-size: 12px; padding: 4px 5px; }
+  .site-header { flex-wrap: wrap; gap: 16px; }
+  .site-header nav { gap: 14px; flex-wrap: wrap; }
+}
