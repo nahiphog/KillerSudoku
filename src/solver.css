@@ -1,0 +1,17 @@
+.board-actions { border-top: 1px solid #e2e6dd; padding: 0 0 20px; display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
+.board-actions button { width: auto; margin-top: 16px; }
+.board-actions label { display: flex; align-items: center; font-size: 12px; gap: 6px; margin-top: 16px; }
+.solver-panel { padding: 24px; background: #fff; border: 1px solid #dedfd4; border-radius: 14px; }
+.solver-panel h2 { font-size: 23px; }
+.solver-panel p { font-size: 12px; line-height: 1.8; overflow-wrap: anywhere; }
+.solver-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.solver-actions button { width: auto; padding: 10px 12px; margin: 8px 0; font-size: 12px; }
+#solver-message { border-left: 3px solid #819966; padding-left: 12px; }
+#step-history { max-height: 480px; overflow-y: auto; padding-left: 24px; }
+#step-history li { border-top: 1px solid #dedfd4; padding: 12px 0; }
+#step-history h3 { font-size: 14px; margin: 0; }
+.deduction-changes { color: #426035; }
+.board td.deduction-cell { box-shadow: inset 0 0 0 2px #d99d35; }
+.cell-candidates { position: absolute; inset: 15px 6px 4px; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); font: 10px/1 sans-serif; color: #526950; }
+.cell-candidates span { display: grid; place-items: center; }
+@media (max-width: 400px) { .cell-candidates { font-size: 8px; inset: 13px 5px 3px; } }

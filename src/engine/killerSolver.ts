@@ -1,0 +1,118 @@
+import { bit, cloneGrid, digitsOf, emptyGrid, isBroken, isSolved, setValue, UNITS, cellName, type Grid } from '../vendor/sudokui/board';
+import { findNextStep, TECHNIQUES } from './solver';
+import { combinationTable } from './combinations';
+import type { Cage } from './cages';
+
+export interface Deduction {
+  technique: string;
+  description: string;
+  placements: { cell: number; digit: number }[];
+  eliminations: { cell: number; digit: number }[];
+  cells: number[];
+}
+export type SolverResult =
+  | { status: 'step'; step: Deduction }
+  | { status: 'solved' | 'stalled' | 'contradiction'; message: string };
+
+const tables = new Map(Array.from({ length: 8 }, (_, i) => [i + 2, combinationTable(i + 2)]));
+export const startSolver = (): Grid => emptyGrid();
+
+/** Perfect matching: can each cage cell take a different digit from this set?
+ * An optional forced edge tests whether a particular candidate has support.
+ * This avoids enumerating up to 9! permutations of a cage.
+ */
+function canAssign(masks: number[], forcedCell = -1, forcedDigit = 0): boolean {
+  const owner = Array<number>(10).fill(-1);
+  if (forcedCell >= 0) owner[forcedDigit] = forcedCell;
+  function augment(cell: number, visited: Set<number>): boolean {
+    for (const digit of digitsOf(masks[cell])) {
+      if (digit === forcedDigit || visited.has(digit)) continue;
+      visited.add(digit);
+      if (owner[digit] < 0 || augment(owner[digit], visited)) {
+        owner[digit] = cell;
+        return true;
+      }
+    }
+    return false;
+  }
+  return masks.every((_, cell) => cell === forcedCell || augment(cell, new Set()));
+}
+
+export function cageSupports(grid: Grid, cage: Cage): { combinations: number[][]; supports: number[] } {
+  const supports = cage.cells.map(() => 0);
+  const combinations: number[][] = [];
+  const sets = tables.get(cage.cells.length)?.find(row => row.sum === cage.sum)?.combinations ?? [];
+  for (const digits of sets) {
+    const setMask = digits.reduce((mask, d) => mask | bit(d), 0);
+    const masks = cage.cells.map(cell => (grid.values[cell] ? bit(grid.values[cell]) : grid.cands[cell]) & setMask);
+    if (masks.some(mask => !mask) || !canAssign(masks)) continue;
+    combinations.push(digits);
+    masks.forEach((mask, index) => {
+      for (const digit of digitsOf(mask & ~supports[index])) {
+        if (canAssign(masks, index, digit)) supports[index] |= bit(digit);
+      }
+    });
+  }
+  return { combinations, supports };
+}
+
+export function nextKillerStep(grid: Grid, cages: Cage[]): SolverResult {
+  if (cages.flatMap(c => c.cells).length !== 81 || new Set(cages.flatMap(c => c.cells)).size !== 81
+    || cages.some(c => c.cells.some(i => !Number.isInteger(i) || i < 0 || i >= 81))) {
+    return { status: 'contradiction', message: 'Cages must cover all 81 cells exactly once.' };
+  }
+  if (isBroken(grid) || UNITS.some(unit => {
+    const values = unit.map(i => grid.values[i]).filter(Boolean);
+    return new Set(values).size !== values.length;
+  })) return { status: 'contradiction', message: 'The current digits or candidates contradict Sudoku rules.' };
+
+  let cageStep: Deduction | null = null;
+  for (const cage of cages) {
+    const { combinations, supports } = cageSupports(grid, cage);
+    const name = 'Cage at ' + cellName(cage.cells[0]);
+    if (!combinations.length) return { status: 'contradiction', message: name + ' has no valid combination for sum ' + cage.sum + '.' };
+    if (cageStep) continue;
+    const empty = cage.cells.filter(i => !grid.values[i]);
+    if (empty.length === 1) {
+      const usedSum = cage.cells.reduce((sum, i) => sum + grid.values[i], 0);
+      const digit = cage.sum - usedSum;
+      cageStep = {
+        technique: 'Cage remainder',
+        description: name + ': the placed digits total ' + usedSum + '. The remaining cell ' + cellName(empty[0]) + ' must be ' + cage.sum + ' − ' + usedSum + ' = ' + digit + '.',
+        placements: [{ cell: empty[0], digit }], eliminations: [], cells: cage.cells,
+      };
+      continue;
+    }
+    const eliminations = cage.cells.flatMap((cell, index) => grid.values[cell] ? [] :
+      digitsOf(grid.cands[cell] & ~supports[index]).map(digit => ({ cell, digit })));
+    if (eliminations.length) cageStep = {
+      technique: 'Cage combinations',
+      description: name + ' has ' + cage.cells.length + ' cells and sum ' + cage.sum + '. Compatible digit sets: ' +
+        combinations.map(d => '{' + d.join(', ') + '}').join('; ') +
+        '. Matching these distinct digits to the current cell candidates rules out the listed candidates: none can occur in a valid assignment of this cage.',
+      placements: [], eliminations, cells: cage.cells,
+    };
+  }
+  if (isSolved(grid)) return { status: 'solved', message: 'Solved: every row, column, box and cage satisfies its rules.' };
+  if (cageStep) return { status: 'step', step: cageStep };
+  const step = findNextStep(grid); // No Sudoku-only brute force or generated solution is used.
+  if (step) return { status: 'step', step: {
+    technique: TECHNIQUES.find(t => t.id === step.tech)?.name ?? step.tech,
+    description: step.description, placements: step.placements, eliminations: step.eliminations,
+    cells: [...new Set([...step.placements, ...step.eliminations, ...(step.primary ?? []), ...(step.secondary ?? [])].map(item => item.cell))],
+  } };
+  return { status: 'stalled', message: 'No further logical deduction was found using cage combinations and the imported techniques. This puzzle may need stronger techniques or may have multiple solutions. No guess or hidden solution digit has been used.' };
+}
+
+export function applyDeduction(grid: Grid, cages: Cage[], step: Deduction): Grid {
+  const next = cloneGrid(grid);
+  for (const { cell, digit } of step.placements) {
+    setValue(next, cell, digit);
+    // Also propagate the no-repeat rule to cage peers outside Sudoku houses.
+    for (const peer of cages.find(c => c.cells.includes(cell))?.cells ?? []) {
+      if (peer !== cell) next.cands[peer] &= ~bit(digit);
+    }
+  }
+  for (const { cell, digit } of step.eliminations) next.cands[cell] &= ~bit(digit);
+  return next;
+}
