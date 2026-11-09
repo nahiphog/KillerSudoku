@@ -7,6 +7,8 @@ import { header, footer, setupAbout } from './shell';
 import { applyDeduction, startSolver, type Deduction, type SolverResult } from './engine/killerSolver';
 import { cellName, digitsOf, type Grid } from './vendor/sudokui/board';
 import './solver.css';
+import { newManualBoard, enterManualDigit, eraseManualCell, manualStatus, moveSelection } from './engine/manualPlay';
+import './manual.css';
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   ${header}
@@ -14,9 +16,16 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     <div class="workspace">
       <section class="board-panel" aria-labelledby="board-title">
         <div class="panel-heading"><h1 id="board-title">Your grid</h1><span class="badge" id="badge">READY TO GENERATE</span></div>
-        <table class="board" aria-label="Sudoku grid"><tbody>${Array.from({ length: 9 }, (_, r) => `<tr>${Array.from({ length: 9 }, (_, c) => `<td aria-label="Row ${r + 1}, column ${c + 1}, empty"></td>`).join('')}</tr>`).join('')}</tbody></table>
+        <table class="board" role="grid" aria-label="Sudoku grid" aria-describedby="manual-help"><tbody>${Array.from({ length: 9 }, (_, r) => `<tr>${Array.from({ length: 9 }, (_, c) => `<td role="gridcell" tabindex="-1" aria-label="Row ${r + 1}, column ${c + 1}, empty"></td>`).join('')}</tr>`).join('')}</tbody></table>
         <div class="board-footer"><span class="status-dot" aria-hidden="true"></span><p id="status" role="status" aria-live="polite">Generate a grid with cages to get started.</p></div>
         <div class="board-actions"><button id="toggle-solution" type="button" disabled>Hide solution</button><label><input id="show-candidates" type="checkbox" disabled> Show candidates</label></div>
+        <div class="play-modes" aria-label="Board view"><button id="manual-view" type="button" aria-pressed="true" disabled>Play manually</button><button id="solver-view" type="button" aria-pressed="false" disabled>View solver</button></div>
+        <section id="manual-controls" aria-label="Manual entry controls">
+          <p id="manual-help">Select a cell, then use 1–9 or the number pad. Arrow keys move; P toggles pencil marks; Backspace, Delete or 0 erases.</p>
+          <div class="entry-options"><button id="pencil-mode" type="button" aria-pressed="false" disabled>Pencil marks: off</button><button id="erase-entry" type="button" disabled>Erase</button></div>
+          <div class="number-pad" aria-label="Number pad">${Array.from({ length: 9 }, (_, i) => `<button type="button" data-digit="${i + 1}" aria-label="Enter ${i + 1}" disabled>${i + 1}</button>`).join('')}</div>
+          <p id="manual-message" role="status" aria-live="polite">Generate a puzzle to play.</p>
+        </section>
       </section>
       <aside>
         <section class="generate-panel"><h2>Generate a puzzle grid</h2><p>Every puzzle is verified to have one solution and a complete logical solve using cage combinations and Sudoku techniques.</p>
@@ -38,7 +47,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
           <p class="hint">Settings apply to the next generated grid.</p>
         </section>
         <section class="solver-panel" aria-labelledby="solver-title"><h2 id="solver-title">Step-by-step solver</h2>
-          <p>Start with cages and sums only. Each step explains a placement or a candidate elimination.</p>
+          <p>Start with cages and sums only. Each step explains a placement or a candidate elimination. The solver has its own board; your manual entries are preserved.</p>
           <div class="solver-actions"><button id="next-step" type="button" disabled>Next step</button><button id="undo-step" type="button" disabled>Undo step</button><button id="reset-solver" type="button" disabled>Reset solver</button></div>
           <p id="solver-message" role="status" aria-live="polite">Generate a grid to begin.</p>
           <ol id="step-history" reversed aria-label="Deduction history"></ol>
@@ -62,7 +71,11 @@ let worker: Worker | null = null;
 let solution: number[] | null = null;
 let activeCages: Cage[] = [];
 let solvingGrid = startSolver();
-let revealSolution = true;
+let revealSolution = false;
+let boardView: 'manual' | 'solver' = 'manual';
+let manualBoard = newManualBoard();
+let selectedCell = 0;
+let pencilMode = false;
 let solverWorker: Worker | null = null;
 let solverStopped = false;
 const history: { before: Grid; step: Deduction }[] = [];
@@ -73,20 +86,83 @@ const undoButton = document.querySelector<HTMLButtonElement>('#undo-step')!;
 const resetButton = document.querySelector<HTMLButtonElement>('#reset-solver')!;
 const solverMessage = document.querySelector('#solver-message')!;
 const historyList = document.querySelector<HTMLOListElement>('#step-history')!;
+const manualView = document.querySelector<HTMLButtonElement>('#manual-view')!;
+const solverView = document.querySelector<HTMLButtonElement>('#solver-view')!;
+const pencilButton = document.querySelector<HTMLButtonElement>('#pencil-mode')!;
+const eraseButton = document.querySelector<HTMLButtonElement>('#erase-entry')!;
+const numberButtons = [...document.querySelectorAll<HTMLButtonElement>('[data-digit]')];
+const manualMessage = document.querySelector('#manual-message')!;
+function canEdit() { return !!solution && !worker && !solverWorker && !revealSolution && boardView === 'manual'; }
 function updateSolverControls() {
   const busy = !!worker || !!solverWorker;
   toggleSolution.disabled = !solution || busy;
-  candidateToggle.disabled = !solution || busy || revealSolution;
+  candidateToggle.disabled = !solution || busy || revealSolution || boardView === 'manual';
   nextButton.disabled = !solution || busy || solverStopped;
   undoButton.disabled = !history.length || busy;
   resetButton.disabled = !solution || busy;
   toggleSolution.textContent = revealSolution ? 'Hide solution' : 'Show solution';
   toggleSolution.setAttribute('aria-pressed', String(!revealSolution));
+  manualView.disabled = solverView.disabled = !solution || busy;
+  manualView.setAttribute('aria-pressed', String(boardView === 'manual'));
+  solverView.setAttribute('aria-pressed', String(boardView === 'solver'));
+  pencilButton.disabled = eraseButton.disabled = !canEdit();
+  for (const button of numberButtons) button.disabled = !canEdit();
+  pencilButton.setAttribute('aria-pressed', String(pencilMode));
+  pencilButton.textContent = `Pencil marks: ${pencilMode ? 'on' : 'off'}`;
+  document.querySelector('#manual-controls')!.setAttribute('data-active', String(boardView === 'manual'));
+  for (let i = 0; i < cells.length; i++) cells[i].tabIndex = solution && !busy && i === selectedCell ? 0 : -1;
 }
 function paint() {
-  if (solution) renderBoard(revealSolution ? solution : Array.from(solvingGrid.values), activeCages);
+  if (solution) renderBoard(revealSolution ? solution : boardView === 'manual' ? manualBoard.values : Array.from(solvingGrid.values), activeCages);
   updateSolverControls();
 }
+function updateManualMessage() {
+  const { conflicts, complete } = manualStatus(manualBoard, activeCages);
+  manualMessage.textContent = complete ? 'Puzzle solved! Every row, column, box and cage is correct.'
+    : `${cellName(selectedCell)} selected · ${pencilMode ? 'pencil marks' : 'digit entry'} · ${manualBoard.values.filter(Boolean).length}/81 filled.${conflicts.size ? ' Red digits conflict with a Sudoku or cage rule.' : ''}`;
+}
+function selectCell(cell: number) {
+  if (!solution || worker || solverWorker) return;
+  selectedCell = cell; boardView = 'manual'; revealSolution = false;
+  paint(); updateManualMessage(); cells[cell].focus({ preventScroll: true });
+}
+function enterDigit(digit: number) {
+  if (!canEdit()) return;
+  if (pencilMode && manualBoard.values[selectedCell]) {
+    manualMessage.textContent = 'Erase the digit in this cell before adding pencil marks.'; return;
+  }
+  manualBoard = enterManualDigit(manualBoard, selectedCell, digit, pencilMode);
+  paint(); updateManualMessage();
+}
+function eraseEntry() {
+  if (!canEdit()) return;
+  manualBoard = eraseManualCell(manualBoard, selectedCell); paint(); updateManualMessage();
+}
+function togglePencil() { if (canEdit()) { pencilMode = !pencilMode; updateSolverControls(); updateManualMessage(); } }
+cells.forEach((cell, index) => {
+  cell.addEventListener('click', () => selectCell(index));
+  cell.addEventListener('focus', () => {
+    if (selectedCell !== index) { selectedCell = index; paint(); if (solution) updateManualMessage(); }
+  });
+});
+manualView.addEventListener('click', () => { boardView = 'manual'; revealSolution = false; paint(); updateManualMessage(); });
+solverView.addEventListener('click', () => { boardView = 'solver'; revealSolution = false; paint(); });
+pencilButton.addEventListener('click', togglePencil);
+eraseButton.addEventListener('click', eraseEntry);
+numberButtons.forEach(button => button.addEventListener('click', () => enterDigit(Number(button.dataset.digit))));
+document.querySelector('.board-panel')!.addEventListener('keydown', event => {
+  const key = event as KeyboardEvent;
+  const target = key.target as HTMLElement;
+  if (!solution || worker || solverWorker || key.ctrlKey || key.metaKey || key.altKey || key.isComposing
+    || target.matches('input, select, textarea') || target.isContentEditable) return;
+  if (target.matches('[role="gridcell"]') && (key.key.startsWith('Arrow') || key.key === 'Enter' || key.key === ' ')) {
+    key.preventDefault(); selectCell(moveSelection(selectedCell, key.key)); return;
+  }
+  if (!canEdit()) return;
+  if (/^[1-9]$/.test(key.key)) { key.preventDefault(); enterDigit(Number(key.key)); }
+  else if (['Backspace', 'Delete', '0'].includes(key.key)) { key.preventDefault(); eraseEntry(); }
+  else if (key.key.toLowerCase() === 'p') { key.preventDefault(); togglePencil(); }
+});
 function resetSolving() {
   solverWorker?.terminate(); solverWorker = null;
   solvingGrid = startSolver(); history.length = 0; solverStopped = false;
@@ -100,18 +176,18 @@ toggleSolution.addEventListener('click', () => {
 });
 candidateToggle.addEventListener('change', paint);
 resetButton.addEventListener('click', () => {
-  resetSolving(); revealSolution = false; candidateToggle.checked = false; paint();
+  resetSolving(); boardView = 'solver'; revealSolution = false; candidateToggle.checked = false; paint();
 });
 undoButton.addEventListener('click', () => {
   const previous = history.pop();
   if (!previous) return;
-  solvingGrid = previous.before; solverStopped = false; revealSolution = false;
+  solvingGrid = previous.before; solverStopped = false; revealSolution = false; boardView = 'solver';
   historyList.firstElementChild?.remove(); historyList.start = history.length;
   solverMessage.textContent = 'Last deduction undone. ' + history.length + ' steps applied.';
   paint();
 });
 nextButton.addEventListener('click', () => {
-  revealSolution = false; candidateToggle.checked = true;
+  revealSolution = false; boardView = 'solver'; candidateToggle.checked = true;
   solverMessage.textContent = 'Checking cage combinations and Sudoku techniques…';
   try {
     solverWorker = new Worker(new URL('./engine/solver.worker.ts', import.meta.url), { type: 'module' });
@@ -171,6 +247,8 @@ cancelGeneration.addEventListener('click', () => {
 settings.addEventListener('change', validate);
 function renderBoard(values: number[], cages: Cage[]) {
   const cageForCell = new Map(cages.flatMap(cage => cage.cells.map(cell => [cell, cage] as const)));
+  const manual = !revealSolution && boardView === 'manual';
+  const conflicts = manual ? manualStatus(manualBoard, cages).conflicts : new Set<number>();
   cells.forEach((cell, i) => {
     const cage = cageForCell.get(i)!;
     cell.replaceChildren();
@@ -179,15 +257,19 @@ function renderBoard(values: number[], cages: Cage[]) {
     digit.textContent = values[i] ? String(values[i]) : '';
     cell.append(digit);
     cell.setAttribute('aria-label', `Row ${Math.floor(i / 9) + 1}, column ${i % 9 + 1}, ${values[i] || 'empty'}, cage sum ${cage.sum}, ${cage.cells.length} cells`);
-    cell.classList.toggle('deduction-cell', !revealSolution && !!history.at(-1)?.step.cells.includes(i));
-    if (!revealSolution && !values[i] && candidateToggle.checked) {
+    cell.classList.toggle('deduction-cell', !revealSolution && boardView === 'solver' && !!history.at(-1)?.step.cells.includes(i));
+    cell.classList.toggle('selected-cell', manual && selectedCell === i);
+    cell.classList.toggle('conflict-cell', conflicts.has(i));
+    cell.setAttribute('aria-selected', String(manual && selectedCell === i));
+    if (conflicts.has(i)) cell.setAttribute('aria-label', cell.getAttribute('aria-label') + ', rule conflict');
+    if (!revealSolution && !values[i] && (manual ? !!manualBoard.notes[i] : candidateToggle.checked)) {
       const notes = document.createElement('span'); notes.className = 'cell-candidates';
-      const candidates = digitsOf(solvingGrid.cands[i]);
+      const candidates = digitsOf(manual ? manualBoard.notes[i] : solvingGrid.cands[i]);
       for (let d = 1; d <= 9; d++) {
         const mark = document.createElement('span'); mark.textContent = candidates.includes(d) ? String(d) : ''; notes.append(mark);
       }
       cell.append(notes);
-      cell.setAttribute('aria-label', cell.getAttribute('aria-label') + ', candidates ' + candidates.join(', '));
+      cell.setAttribute('aria-label', cell.getAttribute('aria-label') + (manual ? ', pencil marks ' : ', candidates ') + candidates.join(', '));
     }
     const outline = document.createElement('span');
     outline.className = 'cage-outline';
@@ -247,7 +329,9 @@ button.addEventListener('click', () => {
       if (error || !values || !cages || !proofSteps || !difficulty || difficulty !== selectedOptions.difficulty || !hardest) { fail(error ?? 'Unable to verify the requested difficulty. Try again.'); return; }
       verifiedSteps = proofSteps;
       verifiedDifficulty = difficulty; hardestTechnique = hardest;
-      solution = values; activeCages = cages; resetSolving(); revealSolution = true; candidateToggle.checked = false;
+      solution = values; activeCages = cages; resetSolving(); revealSolution = false; candidateToggle.checked = false;
+      manualBoard = newManualBoard(); selectedCell = 0; pencilMode = false; boardView = 'manual';
+      updateManualMessage();
       paint();
       generation++;
       document.querySelector('#badge')!.textContent = `${difficulty.toUpperCase()} · ${cages.length} CAGES`;
