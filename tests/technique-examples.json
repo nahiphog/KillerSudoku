@@ -1,0 +1,3176 @@
+{
+  "FULL_HOUSE": {
+    "puzzle": "....1...3..48..52.65...7......7.439.....8.....283.6......9...71.39..24..5...4....",
+    "stepIndex": 4,
+    "values": "000010003004800520650007000165724390000080000028306000000900071039002400500040000",
+    "cands": [
+      450,
+      448,
+      66,
+      58,
+      0,
+      272,
+      480,
+      168,
+      0,
+      324,
+      321,
+      0,
+      0,
+      292,
+      260,
+      0,
+      0,
+      352,
+      0,
+      0,
+      7,
+      10,
+      260,
+      0,
+      385,
+      137,
+      392,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      128,
+      332,
+      328,
+      68,
+      17,
+      0,
+      273,
+      99,
+      57,
+      122,
+      328,
+      0,
+      0,
+      0,
+      272,
+      0,
+      65,
+      25,
+      88,
+      138,
+      136,
+      34,
+      0,
+      52,
+      148,
+      162,
+      0,
+      0,
+      192,
+      0,
+      0,
+      49,
+      112,
+      0,
+      0,
+      176,
+      176,
+      0,
+      193,
+      99,
+      33,
+      0,
+      133,
+      418,
+      164,
+      418
+    ],
+    "step": {
+      "tech": "FULL_HOUSE",
+      "placements": [
+        {
+          "cell": 35,
+          "digit": 8
+        }
+      ],
+      "eliminations": [],
+      "units": [
+        {
+          "unit": 3,
+          "role": "primary"
+        }
+      ],
+      "labels": {
+        "primary": "row 4, with one cell left"
+      },
+      "walk": {
+        "frames": [
+          {
+            "text": "Row 4 has one empty cell, r4c9, and lacks only 8.",
+            "show": []
+          }
+        ]
+      },
+      "description": "Full House: r4c9 is the last empty cell in row 4, so it must be 8."
+    }
+  },
+  "NAKED_SINGLE": {
+    "puzzle": "....1...3..48..52.65...7......7.439.....8.....283.6......9...71.39..24..5...4....",
+    "stepIndex": 0,
+    "values": "000010003004800520650007000000704390000080000028306000000900071039002400500040000",
+    "cands": [
+      450,
+      448,
+      66,
+      58,
+      0,
+      272,
+      480,
+      168,
+      0,
+      325,
+      321,
+      0,
+      0,
+      292,
+      260,
+      0,
+      0,
+      352,
+      0,
+      0,
+      7,
+      10,
+      262,
+      0,
+      385,
+      137,
+      392,
+      1,
+      33,
+      49,
+      0,
+      18,
+      0,
+      0,
+      0,
+      178,
+      333,
+      361,
+      117,
+      19,
+      0,
+      273,
+      99,
+      57,
+      122,
+      329,
+      0,
+      0,
+      0,
+      272,
+      0,
+      65,
+      25,
+      88,
+      138,
+      168,
+      34,
+      0,
+      52,
+      148,
+      162,
+      0,
+      0,
+      193,
+      0,
+      0,
+      49,
+      112,
+      0,
+      0,
+      176,
+      176,
+      0,
+      225,
+      99,
+      33,
+      0,
+      133,
+      418,
+      164,
+      418
+    ],
+    "step": {
+      "tech": "NAKED_SINGLE",
+      "placements": [
+        {
+          "cell": 27,
+          "digit": 1
+        }
+      ],
+      "eliminations": [],
+      "primary": [
+        {
+          "cell": 27,
+          "digit": 1
+        }
+      ],
+      "secondary": [
+        {
+          "cell": 46,
+          "digit": 2
+        },
+        {
+          "cell": 33,
+          "digit": 3
+        },
+        {
+          "cell": 32,
+          "digit": 4
+        },
+        {
+          "cell": 72,
+          "digit": 5
+        },
+        {
+          "cell": 18,
+          "digit": 6
+        },
+        {
+          "cell": 30,
+          "digit": 7
+        },
+        {
+          "cell": 47,
+          "digit": 8
+        },
+        {
+          "cell": 34,
+          "digit": 9
+        }
+      ],
+      "labels": {
+        "primary": "the cell with one candidate left",
+        "secondary": "the other eight digits, each already in its row, column or box"
+      },
+      "walk": {
+        "frames": [
+          {
+            "text": "Only one candidate is left in r4c1: 1.",
+            "show": [
+              "primary"
+            ]
+          },
+          {
+            "text": "The row, column and box of r4c1 already hold the other eight digits.",
+            "show": [
+              "secondary"
+            ]
+          }
+        ]
+      },
+      "description": "Naked Single: the row, column and box of r4c1 already hold the other eight digits, so r4c1 must be 1."
+    }
+  },
+  "HIDDEN_SINGLE": {
+    "puzzle": "....1...3..48..52.65...7......7.439.....8.....283.6......9...71.39..24..5...4....",
+    "stepIndex": 5,
+    "values": "000010003004800520650007000165724398000080000028306000000900071039002400500040000",
+    "cands": [
+      450,
+      448,
+      66,
+      58,
+      0,
+      272,
+      480,
+      168,
+      0,
+      324,
+      321,
+      0,
+      0,
+      292,
+      260,
+      0,
+      0,
+      352,
+      0,
+      0,
+      7,
+      10,
+      260,
+      0,
+      385,
+      137,
+      264,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      332,
+      328,
+      68,
+      17,
+      0,
+      273,
+      99,
+      57,
+      122,
+      328,
+      0,
+      0,
+      0,
+      272,
+      0,
+      65,
+      25,
+      88,
+      138,
+      136,
+      34,
+      0,
+      52,
+      148,
+      162,
+      0,
+      0,
+      192,
+      0,
+      0,
+      49,
+      112,
+      0,
+      0,
+      176,
+      48,
+      0,
+      193,
+      99,
+      33,
+      0,
+      133,
+      418,
+      164,
+      290
+    ],
+    "step": {
+      "tech": "HIDDEN_SINGLE",
+      "placements": [
+        {
+          "cell": 10,
+          "digit": 1
+        }
+      ],
+      "eliminations": [],
+      "primary": [
+        {
+          "cell": 10,
+          "digit": 1
+        }
+      ],
+      "secondary": [
+        {
+          "cell": 27,
+          "digit": 1
+        },
+        {
+          "cell": 4,
+          "digit": 1
+        },
+        {
+          "cell": 62,
+          "digit": 1
+        }
+      ],
+      "units": [
+        {
+          "unit": 1,
+          "role": "primary"
+        },
+        {
+          "unit": 9,
+          "role": "secondary"
+        },
+        {
+          "unit": 19,
+          "role": "secondary"
+        },
+        {
+          "unit": 17,
+          "role": "secondary"
+        }
+      ],
+      "labels": {
+        "primary": "row 2: 1 has one place left in it",
+        "secondary": "the 1s that rule out its other cells, shaded along their lines"
+      },
+      "walk": {
+        "frames": [
+          {
+            "text": "In row 2, the 1 can go only in r2c2.",
+            "show": [
+              "primary"
+            ]
+          },
+          {
+            "text": "The 1s in r4c1, r1c5 and r7c9 rule out 1 in every other empty cell of row 2.",
+            "show": [
+              "secondary"
+            ]
+          }
+        ]
+      },
+      "description": "Hidden Single: 1 fits only in r2c2 within row 2."
+    }
+  },
+  "LOCKED_CANDIDATES_1": {
+    "puzzle": ".......2.2.64.9.7..958..1..8..6......4.....6......7..9..7..465..6.5.23.1.1.......",
+    "stepIndex": 42,
+    "values": "184753926236419875795826134870605013040081567651007089027104658468572391510068742",
+    "cands": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      258,
+      0,
+      264,
+      0,
+      10,
+      0,
+      0,
+      260,
+      0,
+      262,
+      262,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      6,
+      12,
+      0,
+      10,
+      0,
+      0,
+      260,
+      0,
+      0,
+      0,
+      260,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      260,
+      260,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "step": {
+      "tech": "LOCKED_CANDIDATES_1",
+      "placements": [],
+      "eliminations": [
+        {
+          "cell": 39,
+          "digit": 3
+        }
+      ],
+      "primary": [
+        {
+          "cell": 36,
+          "digit": 3
+        },
+        {
+          "cell": 38,
+          "digit": 3
+        }
+      ],
+      "units": [
+        {
+          "unit": 21,
+          "role": "primary"
+        },
+        {
+          "unit": 4,
+          "role": "secondary"
+        }
+      ],
+      "labels": {
+        "primary": "box 4: every 3 in it sits on one row",
+        "secondary": "row 5, which loses 3 outside box 4"
+      },
+      "walk": {
+        "frames": [
+          {
+            "text": "In box 4, the only cells that can take 3 are r5c1 and r5c3.",
+            "show": [
+              "primary"
+            ]
+          },
+          {
+            "text": "One of them must be 3, and both lie in row 5, so no other cell of row 5 can be 3.",
+            "show": [
+              "secondary"
+            ]
+          }
+        ]
+      },
+      "description": "Locked Candidates (Pointing): in box 4, every 3 lies in row 5, so no other cell of row 5 can be 3."
+    }
+  },
+  "LOCKED_CANDIDATES_2": {
+    "puzzle": "8..7......9.4.3..8..1..9.7.3...6.84...9...6...58.9...1.1.9..4..4..3.8.9......6..5",
+    "stepIndex": 38,
+    "values": "804700903790403008031689074372561849149837652658294731013970486400308197987146325",
+    "cands": [
+      0,
+      34,
+      0,
+      0,
+      19,
+      18,
+      0,
+      33,
+      0,
+      0,
+      0,
+      48,
+      0,
+      19,
+      0,
+      18,
+      33,
+      0,
+      18,
+      0,
+      0,
+      0,
+      0,
+      0,
+      18,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      18,
+      0,
+      0,
+      0,
+      0,
+      18,
+      0,
+      0,
+      0,
+      0,
+      34,
+      48,
+      0,
+      18,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "step": {
+      "tech": "LOCKED_CANDIDATES_2",
+      "placements": [],
+      "eliminations": [
+        {
+          "cell": 13,
+          "digit": 5
+        }
+      ],
+      "primary": [
+        {
+          "cell": 4,
+          "digit": 5
+        },
+        {
+          "cell": 5,
+          "digit": 5
+        }
+      ],
+      "units": [
+        {
+          "unit": 0,
+          "role": "primary"
+        },
+        {
+          "unit": 19,
+          "role": "secondary"
+        }
+      ],
+      "labels": {
+        "primary": "row 1: every 5 in it sits in one box",
+        "secondary": "box 2, which loses 5 outside row 1"
+      },
+      "walk": {
+        "frames": [
+          {
+            "text": "In row 1, the only cells that can take 5 are r1c5 and r1c6.",
+            "show": [
+              "primary"
+            ]
+          },
+          {
+            "text": "One of them must be 5, and both lie in box 2, so no other cell of box 2 can be 5.",
+            "show": [
+              "secondary"
+            ]
+          }
+        ]
+      },
+      "description": "Locked Candidates (Claiming): in row 1, every 5 lies in box 2, so no other cell of box 2 can be 5."
+    }
+  },
+  "NAKED_PAIR": {
+    "puzzle": "...8....264.....9.378....6.1..5.7..8..5.8.6........4.1.37.4.........97......6....",
+    "stepIndex": 42,
+    "values": "519876342642000897378924165164537928295481673783692451937040006806009704401760009",
+    "cands": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      5,
+      17,
+      20,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      3,
+      0,
+      144,
+      18,
+      129,
+      0,
+      0,
+      18,
+      0,
+      7,
+      17,
+      0,
+      0,
+      5,
+      0,
+      0,
+      18,
+      0,
+      0,
+      0,
+      148,
+      18,
+      132,
+      0
+    ],
+    "step": {
+      "tech": "NAKED_PAIR",
+      "placements": [],
+      "eliminations": [
+        {
+          "cell": 77,
+          "digit": 5
+        }
+      ],
+      "primary": [
+        {
+          "cell": 73,
+          "digit": 2
+        },
+        {
+          "cell": 73,
+          "digit": 5
+        },
+        {
+          "cell": 78,
+          "digit": 2
+        },
+        {
+          "cell": 78,
+          "digit": 5
+        }
+      ],
+      "units": [
+        {
+          "unit": 8,
+          "role": "primary"
+        }
+      ],
+      "labels": {
+        "primary": "two cells that hold only 2 and 5 between them, in row 9"
+      },
+      "walk": {
+        "frames": [
+          {
+            "text": "In row 9, r9c2 and r9c7 hold only 2 and 5.",
+            "show": [
+              "primary"
+            ]
+          }
+        ],
+        "lead": "They must be 2 and 5, one each: these digits can go nowhere else in row 9."
+      },
+      "description": "Naked Pair: in row 9, r9c2 and r9c7 hold only 2 and 5, so these digits can go nowhere else in row 9."
+    }
+  },
+  "HIDDEN_PAIR": {
+    "puzzle": "28.....31..51.792.9..2........4...5..4..6..7..2...8........6..3.318.42..89.....46",
+    "stepIndex": 33,
+    "values": "287649531465137928913285467070400050040060070020708014754926183631874295892000746",
+    "cands": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      5,
+      0,
+      416,
+      0,
+      257,
+      7,
+      164,
+      0,
+      258,
+      21,
+      0,
+      384,
+      20,
+      0,
+      7,
+      132,
+      0,
+      258,
+      20,
+      0,
+      288,
+      0,
+      272,
+      0,
+      36,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      20,
+      17,
+      5,
+      0,
+      0,
+      0
+    ],
+    "step": {
+      "tech": "HIDDEN_PAIR",
+      "placements": [],
+      "eliminations": [
+        {
+          "cell": 29,
+          "digit": 9
+        },
+        {
+          "cell": 33,
+          "digit": 3
+        }
+      ],
+      "primary": [
+        {
+          "cell": 29,
+          "digit": 6
+        },
+        {
+          "cell": 29,
+          "digit": 8
+        },
+        {
+          "cell": 33,
+          "digit": 6
+        },
+        {
+          "cell": 33,
+          "digit": 8
+        }
+      ],
+      "units": [
+        {
+          "unit": 3,
+          "role": "primary"
+        }
+      ],
+      "labels": {
+        "primary": "the only two cells of row 4 where 6 and 8 can go"
+      },
+      "walk": {
+        "frames": [
+          {
+            "text": "In row 4, the digits 6 and 8 can go only in r4c3 and r4c7.",
+            "show": [
+              "primary"
+            ]
+          }
+        ],
+        "lead": "They must be 6 and 8, one each, and hold nothing else: r4c3 and r4c7 keep only 6 and 8."
+      },
+      "description": "Hidden Pair: in row 4, the digits 6 and 8 can go only in r4c3 and r4c7, so these cells can hold nothing else."
+    }
+  },
+  "NAKED_TRIPLE": {
+    "puzzle": "....4.6...1..739........15.2....48..5.7...2.1..69....5.24........143..8...3.5....",
+    "stepIndex": 40,
+    "values": "392145678615873924478000153239514867547300291186927345024001530951430780063050410",
+    "cands": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      34,
+      288,
+      290,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      160,
+      160,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      192,
+      0,
+      0,
+      96,
+      416,
+      0,
+      0,
+      0,
+      288,
+      0,
+      0,
+      0,
+      0,
+      0,
+      34,
+      0,
+      0,
+      34,
+      192,
+      0,
+      0,
+      66,
+      0,
+      386,
+      0,
+      0,
+      258
+    ],
+    "step": {
+      "tech": "NAKED_TRIPLE",
+      "placements": [],
+      "eliminations": [
+        {
+          "cell": 58,
+          "digit": 6
+        },
+        {
+          "cell": 77,
+          "digit": 2
+        }
+      ],
+      "primary": [
+        {
+          "cell": 57,
+          "digit": 6
+        },
+        {
+          "cell": 57,
+          "digit": 7
+        },
+        {
+          "cell": 68,
+          "digit": 2
+        },
+        {
+          "cell": 68,
+          "digit": 6
+        },
+        {
+          "cell": 75,
+          "digit": 2
+        },
+        {
+          "cell": 75,
+          "digit": 7
+        }
+      ],
+      "units": [
+        {
+          "unit": 25,
+          "role": "primary"
+        }
+      ],
+      "labels": {
+        "primary": "three cells that hold only 2, 6 and 7 between them, in box 8"
+      },
+      "walk": {
+        "frames": [
+          {
+            "text": "In box 8, r7c4, r8c6 and r9c4 hold only 2, 6 and 7 between them.",
+            "show": [
+              "primary"
+            ]
+          }
+        ],
+        "lead": "They must be 2, 6 and 7, one each: these digits can go nowhere else in box 8."
+      },
+      "description": "Naked Triple: in box 8, r7c4, r8c6 and r9c4 hold only 2, 6 and 7 between them, so these digits can go nowhere else in box 8."
+    }
+  },
+  "HIDDEN_TRIPLE": {
+    "puzzle": ".7.4.25..6...9..4...3..6......6.5.....8....214..9....836........1........59....3.",
+    "stepIndex": 36,
+    "values": "971432586685197040243856917127685090598000621436921758360010070010000060059060130",
+    "cands": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      6,
+      0,
+      6,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      12,
+      0,
+      12,
+      0,
+      0,
+      0,
+      68,
+      72,
+      12,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      10,
+      18,
+      0,
+      392,
+      138,
+      0,
+      272,
+      192,
+      0,
+      10,
+      86,
+      72,
+      396,
+      138,
+      0,
+      272,
+      192,
+      0,
+      0,
+      66,
+      0,
+      136,
+      0,
+      0,
+      10
+    ],
+    "step": {
+      "tech": "HIDDEN_TRIPLE",
+      "placements": [],
+      "eliminations": [
+        {
+          "cell": 66,
+          "digit": 2
+        },
+        {
+          "cell": 66,
+          "digit": 7
+        },
+        {
+          "cell": 68,
+          "digit": 4
+        },
+        {
+          "cell": 68,
+          "digit": 8
+        }
+      ],
+      "primary": [
+        {
+          "cell": 66,
+          "digit": 3
+        },
+        {
+          "cell": 66,
+          "digit": 5
+        },
+        {
+          "cell": 68,
+          "digit": 3
+        },
+        {
+          "cell": 68,
+          "digit": 9
+        },
+        {
+          "cell": 71,
+          "digit": 5
+        },
+        {
+          "cell": 71,
+          "digit": 9
+        }
+      ],
+      "units": [
+        {
+          "unit": 7,
+          "role": "primary"
+        }
+      ],
+      "labels": {
+        "primary": "the only three cells of row 8 where 3, 5 and 9 can go"
+      },
+      "walk": {
+        "frames": [
+          {
+            "text": "In row 8, the digits 3, 5 and 9 can go only in r8c4, r8c6 and r8c9.",
+            "show": [
+              "primary"
+            ]
+          }
+        ],
+        "lead": "They must be 3, 5 and 9, one each, and hold nothing else: r8c4 keeps only 3 and 5; r8c6 keeps only 3 and 9."
+      },
+      "description": "Hidden Triple: in row 8, the digits 3, 5 and 9 can go only in r8c4, r8c6 and r8c9, so these cells can hold nothing else."
+    }
+  },
+  "NAKED_QUADRUPLE": {
+    "puzzle": ".4.7..953.........9.386.1.46..34...8.........7...21..61.8.943.2.........497..3.6.",
+    "stepIndex": 24,
+    "values": "846712953000439687973865124600347208000000700780021036108094372000170000497203061",
+    "cands": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      18,
+      19,
+      19,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      17,
+      273,
+      0,
+      0,
+      0,
+      0,
+      257,
+      0,
+      6,
+      7,
+      267,
+      304,
+      144,
+      160,
+      0,
+      265,
+      272,
+      0,
+      0,
+      264,
+      272,
+      0,
+      0,
+      24,
+      0,
+      0,
+      0,
+      48,
+      0,
+      48,
+      0,
+      0,
+      0,
+      0,
+      0,
+      22,
+      54,
+      18,
+      0,
+      0,
+      160,
+      152,
+      264,
+      272,
+      0,
+      0,
+      0,
+      0,
+      144,
+      0,
+      144,
+      0,
+      0
+    ],
+    "step": {
+      "tech": "NAKED_QUADRUPLE",
+      "placements": [],
+      "eliminations": [
+        {
+          "cell": 38,
+          "digit": 9
+        },
+        {
+          "cell": 43,
+          "digit": 9
+        }
+      ],
+      "primary": [
+        {
+          "cell": 39,
+          "digit": 5
+        },
+        {
+          "cell": 39,
+          "digit": 6
+        },
+        {
+          "cell": 39,
+          "digit": 9
+        },
+        {
+          "cell": 40,
+          "digit": 5
+        },
+        {
+          "cell": 40,
+          "digit": 8
+        },
+        {
+          "cell": 41,
+          "digit": 6
+        },
+        {
+          "cell": 41,
+          "digit": 8
+        },
+        {
+          "cell": 44,
+          "digit": 5
+        },
+        {
+          "cell": 44,
+          "digit": 9
+        }
+      ],
+      "units": [
+        {
+          "unit": 4,
+          "role": "primary"
+        }
+      ],
+      "labels": {
+        "primary": "four cells that hold only 5, 6, 8 and 9 between them, in row 5"
+      },
+      "walk": {
+        "frames": [
+          {
+            "text": "In row 5, r5c4, r5c5, r5c6 and r5c9 hold only 5, 6, 8 and 9 between them.",
+            "show": [
+              "primary"
+            ]
+          }
+        ],
+        "lead": "They must be 5, 6, 8 and 9, one each: these digits can go nowhere else in row 5."
+      },
+      "description": "Naked Quadruple: in row 5, r5c4, r5c5, r5c6 and r5c9 hold only 5, 6, 8 and 9 between them, so these digits can go nowhere else in row 5."
+    }
+  },
+  "X_WING": {
+    "puzzle": "...795...........59..61...879..3.8..1.3...5.7..6.5..298...71..63...........246...",
+    "stepIndex": 40,
+    "values": "208795604600820095950610208795432861123968547486157329842371956360589402509246083",
+    "cands": [
+      0,
+      5,
+      0,
+      0,
+      0,
+      0,
+      0,
+      5,
+      0,
+      0,
+      69,
+      73,
+      0,
+      0,
+      12,
+      65,
+      0,
+      0,
+      0,
+      0,
+      72,
+      0,
+      0,
+      12,
+      0,
+      68,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      65,
+      0,
+      0,
+      0,
+      0,
+      65,
+      0,
+      0,
+      65,
+      0,
+      0,
+      0,
+      0,
+      65,
+      0,
+      0
+    ],
+    "step": {
+      "tech": "X_WING",
+      "placements": [],
+      "eliminations": [
+        {
+          "cell": 11,
+          "digit": 7
+        }
+      ],
+      "primary": [
+        {
+          "cell": 20,
+          "digit": 7
+        },
+        {
+          "cell": 25,
+          "digit": 7
+        },
+        {
+          "cell": 65,
+          "digit": 7
+        },
+        {
+          "cell": 70,
+          "digit": 7
+        }
+      ],
+      "units": [
+        {
+          "unit": 2,
+          "role": "primary"
+        },
+        {
+          "unit": 7,
+          "role": "primary"
+        },
+        {
+          "unit": 11,
+          "role": "secondary"
+        },
+        {
+          "unit": 16,
+          "role": "secondary"
+        }
+      ],
+      "labels": {
+        "primary": "base rows: the 7s of the fish",
+        "secondary": "cover columns: 2 of them take the base's 7s, so 7 goes nowhere else in them"
+      },
+      "walk": {
+        "frames": [
+          {
+            "text": "In rows 3 and 8, the 7s lie only in r3c3, r3c8, r8c3 and r8c8.",
+            "show": [
+              "primary"
+            ]
+          },
+          {
+            "text": "These cells lie in columns 3 and 8. Each of rows 3 and 8 needs a 7, and no column holds two, so each of columns 3 and 8 gets its 7 from one of rows 3 and 8.",
+            "show": [
+              "secondary"
+            ]
+          }
+        ],
+        "lead": "No other cell of columns 3 and 8 can be 7."
+      },
+      "description": "X-Wing on 7: in rows 3 and 8, the 7s lie only in columns 3 and 8 (r3c3, r3c8, r8c3, r8c8). Those 2 rows will use up 7 in those 2 columns, so 7 can go nowhere else in them."
+    }
+  },
+  "HIDDEN_QUADRUPLE": {
+    "puzzle": ".8....64.....54....54.3..817........1.....9.3..5.....223.5....8.6..42.....7......",
+    "stepIndex": 36,
+    "values": "382000645671854239954236781703000804106000903805000102239567418568142397417000526",
+    "cands": [
+      0,
+      0,
+      0,
+      320,
+      321,
+      257,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      258,
+      0,
+      288,
+      259,
+      273,
+      0,
+      48,
+      0,
+      0,
+      10,
+      0,
+      72,
+      194,
+      144,
+      0,
+      80,
+      0,
+      0,
+      264,
+      0,
+      364,
+      320,
+      260,
+      0,
+      96,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      260,
+      384,
+      388,
+      0,
+      0,
+      0
+    ],
+    "step": {
+      "tech": "HIDDEN_QUADRUPLE",
+      "placements": [],
+      "eliminations": [
+        {
+          "cell": 31,
+          "digit": 9
+        },
+        {
+          "cell": 32,
+          "digit": 9
+        },
+        {
+          "cell": 40,
+          "digit": 7
+        }
+      ],
+      "primary": [
+        {
+          "cell": 31,
+          "digit": 1
+        },
+        {
+          "cell": 31,
+          "digit": 2
+        },
+        {
+          "cell": 32,
+          "digit": 1
+        },
+        {
+          "cell": 32,
+          "digit": 5
+        },
+        {
+          "cell": 40,
+          "digit": 2
+        },
+        {
+          "cell": 40,
+          "digit": 8
+        },
+        {
+          "cell": 41,
+          "digit": 5
+        },
+        {
+          "cell": 41,
+          "digit": 8
+        }
+      ],
+      "units": [
+        {
+          "unit": 22,
+          "role": "primary"
+        }
+      ],
+      "labels": {
+        "primary": "the only four cells of box 5 where 1, 2, 5 and 8 can go"
+      },
+      "walk": {
+        "frames": [
+          {
+            "text": "In box 5, the digits 1, 2, 5 and 8 can go only in r4c5, r4c6, r5c5 and r5c6.",
+            "show": [
+              "primary"
+            ]
+          }
+        ],
+        "lead": "They must be 1, 2, 5 and 8, one each, and hold nothing else: r4c5 keeps only 1 and 2; r4c6 keeps only 1 and 5; r5c5 keeps only 2 and 8."
+      },
+      "description": "Hidden Quadruple: in box 5, the digits 1, 2, 5 and 8 can go only in r4c5, r4c6, r5c5 and r5c6, so these cells can hold nothing else."
+    }
+  },
+  "SWORDFISH": {
+    "puzzle": ".8.579....6........7.1..8...56..31.2..8...6..3.12..78...5..1.3........7....892.6.",
+    "stepIndex": 35,
+    "values": "180579306560328017073164805756083102008017653301256780605741038810635070437892561",
+    "cands": [
+      0,
+      0,
+      10,
+      0,
+      0,
+      0,
+      0,
+      10,
+      0,
+      0,
+      0,
+      264,
+      0,
+      0,
+      0,
+      264,
+      0,
+      0,
+      258,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      258,
+      0,
+      0,
+      0,
+      0,
+      264,
+      0,
+      0,
+      0,
+      264,
+      0,
+      258,
+      266,
+      0,
+      264,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      264,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      264,
+      0,
+      258,
+      0,
+      0,
+      0,
+      0,
+      258,
+      0,
+      0,
+      0,
+      0,
+      258,
+      0,
+      0,
+      0,
+      266,
+      0,
+      264,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "step": {
+      "tech": "SWORDFISH",
+      "placements": [],
+      "eliminations": [
+        {
+          "cell": 37,
+          "digit": 9
+        }
+      ],
+      "primary": [
+        {
+          "cell": 18,
+          "digit": 9
+        },
+        {
+          "cell": 36,
+          "digit": 9
+        },
+        {
+          "cell": 30,
+          "digit": 9
+        },
+        {
+          "cell": 39,
+          "digit": 9
+        },
+        {
+          "cell": 25,
+          "digit": 9
+        },
+        {
+          "cell": 34,
+          "digit": 9
+        }
+      ],
+      "units": [
+        {
+          "unit": 9,
+          "role": "primary"
+        },
+        {
+          "unit": 12,
+          "role": "primary"
+        },
+        {
+          "unit": 16,
+          "role": "primary"
+        },
+        {
+          "unit": 2,
+          "role": "secondary"
+        },
+        {
+          "unit": 3,
+          "role": "secondary"
+        },
+        {
+          "unit": 4,
+          "role": "secondary"
+        }
+      ],
+      "labels": {
+        "primary": "base columns: the 9s of the fish",
+        "secondary": "cover rows: 3 of them take the base's 9s, so 9 goes nowhere else in them"
+      },
+      "walk": {
+        "frames": [
+          {
+            "text": "In columns 1, 4 and 8, the 9s lie only in r3c1, r5c1, r4c4, r5c4, r3c8 and r4c8.",
+            "show": [
+              "primary"
+            ]
+          },
+          {
+            "text": "These cells lie in rows 3, 4 and 5. Each of columns 1, 4 and 8 needs a 9, and no row holds two, so each of rows 3, 4 and 5 gets its 9 from one of columns 1, 4 and 8.",
+            "show": [
+              "secondary"
+            ]
+          }
+        ],
+        "lead": "No other cell of rows 3, 4 and 5 can be 9."
+      },
+      "description": "Swordfish on 9: in columns 1, 4 and 8, the 9s lie only in rows 3, 4 and 5 (r3c1, r5c1, r4c4, r5c4, r3c8, r4c8). Those 3 columns will use up 9 in those 3 rows, so 9 can go nowhere else in them."
+    }
+  },
+  "JELLYFISH": {
+    "puzzle": ".....2....9.7..84.....4.3...8...94...4..3....27.1.......69.5.........18.4..21...9",
+    "stepIndex": 34,
+    "values": "804392017390701840107048390081029473040837021273104908716985234000470180408210709",
+    "cands": [
+      0,
+      48,
+      0,
+      0,
+      0,
+      0,
+      48,
+      0,
+      0,
+      0,
+      0,
+      18,
+      0,
+      48,
+      0,
+      0,
+      0,
+      50,
+      0,
+      50,
+      0,
+      48,
+      0,
+      0,
+      0,
+      0,
+      50,
+      48,
+      0,
+      0,
+      48,
+      0,
+      0,
+      0,
+      0,
+      0,
+      304,
+      0,
+      272,
+      0,
+      0,
+      0,
+      48,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      48,
+      0,
+      0,
+      48,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      272,
+      22,
+      274,
+      0,
+      0,
+      36,
+      0,
+      0,
+      48,
+      0,
+      20,
+      0,
+      0,
+      0,
+      36,
+      0,
+      48,
+      0
+    ],
+    "step": {
+      "tech": "JELLYFISH",
+      "placements": [],
+      "eliminations": [
+        {
+          "cell": 26,
+          "digit": 6
+        }
+      ],
+      "primary": [
+        {
+          "cell": 13,
+          "digit": 6
+        },
+        {
+          "cell": 17,
+          "digit": 6
+        },
+        {
+          "cell": 49,
+          "digit": 6
+        },
+        {
+          "cell": 52,
+          "digit": 6
+        },
+        {
+          "cell": 68,
+          "digit": 6
+        },
+        {
+          "cell": 71,
+          "digit": 6
+        },
+        {
+          "cell": 77,
+          "digit": 6
+        },
+        {
+          "cell": 79,
+          "digit": 6
+        }
+      ],
+      "units": [
+        {
+          "unit": 1,
+          "role": "primary"
+        },
+        {
+          "unit": 5,
+          "role": "primary"
+        },
+        {
+          "unit": 7,
+          "role": "primary"
+        },
+        {
+          "unit": 8,
+          "role": "primary"
+        },
+        {
+          "unit": 13,
+          "role": "secondary"
+        },
+        {
+          "unit": 14,
+          "role": "secondary"
+        },
+        {
+          "unit": 16,
+          "role": "secondary"
+        },
+        {
+          "unit": 17,
+          "role": "secondary"
+        }
+      ],
+      "labels": {
+        "primary": "base rows: the 6s of the fish",
+        "secondary": "cover columns: 4 of them take the base's 6s, so 6 goes nowhere else in them"
+      },
+      "walk": {
+        "frames": [
+          {
+            "text": "In rows 2, 6, 8 and 9, the 6s lie only in r2c5, r2c9, r6c5, r6c8, r8c6, r8c9, r9c6 and r9c8.",
+            "show": [
+              "primary"
+            ]
+          },
+          {
+            "text": "These cells lie in columns 5, 6, 8 and 9. Each of rows 2, 6, 8 and 9 needs a 6, and no column holds two, so each of columns 5, 6, 8 and 9 gets its 6 from one of rows 2, 6, 8 and 9.",
+            "show": [
+              "secondary"
+            ]
+          }
+        ],
+        "lead": "No other cell of columns 5, 6, 8 and 9 can be 6."
+      },
+      "description": "Jellyfish on 6: in rows 2, 6, 8 and 9, the 6s lie only in columns 5, 6, 8 and 9 (r2c5, r2c9, r6c5, r6c8, r8c6, r8c9, r9c6, r9c8). Those 4 rows will use up 6 in those 4 columns, so 6 can go nowhere else in them."
+    }
+  },
+  "EMPTY_RECTANGLE": {
+    "puzzle": "7.....6.2...1...4.14..8.........14....3.4.9....17.........9..25.6...2...2.7.....3",
+    "stepIndex": 41,
+    "values": "700904612906127048142080079029061407673248951401709206014090725060072194297415863",
+    "cands": [
+      0,
+      148,
+      144,
+      0,
+      20,
+      0,
+      0,
+      0,
+      0,
+      0,
+      20,
+      0,
+      0,
+      0,
+      0,
+      20,
+      0,
+      0,
+      0,
+      0,
+      0,
+      52,
+      0,
+      36,
+      20,
+      0,
+      0,
+      144,
+      0,
+      0,
+      20,
+      0,
+      0,
+      0,
+      132,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      144,
+      0,
+      0,
+      20,
+      0,
+      0,
+      132,
+      0,
+      132,
+      0,
+      0,
+      164,
+      0,
+      36,
+      0,
+      0,
+      0,
+      148,
+      0,
+      144,
+      132,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "step": {
+      "tech": "EMPTY_RECTANGLE",
+      "placements": [],
+      "eliminations": [
+        {
+          "cell": 46,
+          "digit": 5
+        }
+      ],
+      "primary": [
+        {
+          "cell": 1,
+          "digit": 5
+        },
+        {
+          "cell": 2,
+          "digit": 5
+        },
+        {
+          "cell": 10,
+          "digit": 5
+        }
+      ],
+      "secondary": [
+        {
+          "cell": 4,
+          "digit": 5
+        },
+        {
+          "cell": 49,
+          "digit": 5
+        }
+      ],
+      "units": [
+        {
+          "unit": 18,
+          "role": "primary"
+        },
+        {
+          "unit": 0,
+          "role": "primary"
+        },
+        {
+          "unit": 10,
+          "role": "primary"
+        },
+        {
+          "unit": 13,
+          "role": "secondary"
+        }
+      ],
+      "labels": {
+        "primary": "box 1: its 5s all lie in row 1 or column 2",
+        "secondary": "r1c5 and r6c5: the only 5s in column 5"
+      },
+      "walk": {
+        "frames": [
+          {
+            "text": "In box 1, every 5 lies in row 1 or column 2: r1c2 and r1c3 in row 1, r2c2 in column 2.",
+            "show": [
+              "primary"
+            ]
+          },
+          {
+            "text": "r1c5 and r6c5 are the only 5s in column 5, so one of them is 5.",
+            "show": [
+              "secondary"
+            ]
+          }
+        ],
+        "lead": "If r6c5 is 5, r6c2 sees it in row 6. If r1c5 is 5, row 1 has no other 5, so the 5 of box 1 must be in r2c2, which r6c2 sees in column 2. Either way r6c2 sees a 5."
+      },
+      "description": "The only 5s in column 5 are r1c5 and r6c5. If r6c5 is 5, r6c2 sees it in row 6. If r1c5 is 5, box 1 has no 5 left in row 1, so its 5 lies in column 2, which r6c2 sees too. So 5 is removed from r6c2."
+    }
+  },
+  "REMOTE_PAIR": {
+    "puzzle": ".2..17..567............2.8.2.496...78.......27...214.8.1.2............633..49..7.",
+    "stepIndex": 42,
+    "values": "428617935670809124100042786254968317801704602760021408516273849947185263382496571",
+    "cands": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      20,
+      0,
+      20,
+      0,
+      0,
+      0,
+      0,
+      0,
+      260,
+      276,
+      20,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      260,
+      0,
+      0,
+      20,
+      0,
+      0,
+      272,
+      0,
+      0,
+      0,
+      260,
+      20,
+      0,
+      0,
+      0,
+      272,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "step": {
+      "tech": "REMOTE_PAIR",
+      "placements": [],
+      "eliminations": [
+        {
+          "cell": 47,
+          "digit": 3
+        }
+      ],
+      "links": [
+        {
+          "from": [
+            {
+              "cell": 11,
+              "digit": 3
+            }
+          ],
+          "to": [
+            {
+              "cell": 11,
+              "digit": 5
+            }
+          ],
+          "strong": true,
+          "undirected": true,
+          "text": "The cells r2c3, r2c5, r3c4, r5c5 and r6c4 hold only 3 and 5. Each line joins two of them that see each other: they cannot hold the same digit, so their 3s take opposite shades, and so do their 5s."
+        },
+        {
+          "from": [
+            {
+              "cell": 11,
+              "digit": 3
+            }
+          ],
+          "to": [
+            {
+              "cell": 13,
+              "digit": 3
+            }
+          ],
+          "strong": true,
+          "undirected": true
+        },
+        {
+          "from": [
+            {
+              "cell": 13,
+              "digit": 3
+            }
+          ],
+          "to": [
+            {
+              "cell": 13,
+              "digit": 5
+            }
+          ],
+          "strong": true,
+          "undirected": true
+        },
+        {
+          "from": [
+            {
+              "cell": 13,
+              "digit": 3
+            }
+          ],
+          "to": [
+            {
+              "cell": 40,
+              "digit": 3
+            }
+          ],
+          "strong": true,
+          "undirected": true
+        },
+        {
+          "from": [
+            {
+              "cell": 40,
+              "digit": 3
+            }
+          ],
+          "to": [
+            {
+              "cell": 40,
+              "digit": 5
+            }
+          ],
+          "strong": true,
+          "undirected": true
+        },
+        {
+          "from": [
+            {
+              "cell": 40,
+              "digit": 3
+            }
+          ],
+          "to": [
+            {
+              "cell": 48,
+              "digit": 3
+            }
+          ],
+          "strong": true,
+          "undirected": true
+        },
+        {
+          "from": [
+            {
+              "cell": 48,
+              "digit": 3
+            }
+          ],
+          "to": [
+            {
+              "cell": 21,
+              "digit": 3
+            }
+          ],
+          "strong": true,
+          "undirected": true
+        },
+        {
+          "from": [
+            {
+              "cell": 48,
+              "digit": 3
+            }
+          ],
+          "to": [
+            {
+              "cell": 48,
+              "digit": 5
+            }
+          ],
+          "strong": true,
+          "undirected": true
+        },
+        {
+          "from": [
+            {
+              "cell": 21,
+              "digit": 3
+            }
+          ],
+          "to": [
+            {
+              "cell": 21,
+              "digit": 5
+            }
+          ],
+          "strong": true,
+          "undirected": true
+        },
+        {
+          "from": [
+            {
+              "cell": 11,
+              "digit": 3
+            }
+          ],
+          "to": [
+            {
+              "cell": 47,
+              "digit": 3
+            }
+          ],
+          "strong": false,
+          "undirected": true,
+          "text": "If dark purple is true, the 3 in r2c3 is true, and the 3 in r6c3 goes."
+        },
+        {
+          "from": [
+            {
+              "cell": 48,
+              "digit": 3
+            }
+          ],
+          "to": [
+            {
+              "cell": 47,
+              "digit": 3
+            }
+          ],
+          "strong": false,
+          "undirected": true,
+          "text": "If light purple is true, the 3 in r6c4 is true, and the 3 in r6c3 goes. Either way it is false."
+        }
+      ],
+      "truth": "parity",
+      "colouring": {
+        "rule": "remotePair",
+        "clusters": [
+          {
+            "dark": [
+              {
+                "cell": 11,
+                "digit": 3
+              },
+              {
+                "cell": 13,
+                "digit": 5
+              },
+              {
+                "cell": 21,
+                "digit": 3
+              },
+              {
+                "cell": 40,
+                "digit": 3
+              },
+              {
+                "cell": 48,
+                "digit": 5
+              }
+            ],
+            "light": [
+              {
+                "cell": 11,
+                "digit": 5
+              },
+              {
+                "cell": 13,
+                "digit": 3
+              },
+              {
+                "cell": 21,
+                "digit": 5
+              },
+              {
+                "cell": 40,
+                "digit": 5
+              },
+              {
+                "cell": 48,
+                "digit": 3
+              }
+            ]
+          }
+        ]
+      },
+      "description": "Remote Pair: the cells r2c3, r2c5, r3c4, r5c5 and r6c4 hold only 3 and 5. Two of them that see each other cannot hold the same digit, so their 3s take opposite shades of purple, and so do their 5s: either every dark purple candidate is true, or every light purple one is. The 3 in r6c3 sees a dark purple 3 in r2c3 and a light purple 3 in r6c4, so it is false either way."
+    }
+  },
+  "W_WING": {
+    "puzzle": ".46..8.....26.45..9........3......6...8.5.217.2.4..........21...6.1...25..7.....9",
+    "stepIndex": 43,
+    "values": "146508002782604501953721000375219864498356217621487953534902100869103025217805009",
+    "cands": [
+      0,
+      0,
+      0,
+      0,
+      260,
+      0,
+      68,
+      324,
+      0,
+      0,
+      0,
+      0,
+      0,
+      260,
+      0,
+      0,
+      260,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      40,
+      136,
+      160,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      96,
+      0,
+      0,
+      192,
+      160,
+      0,
+      0,
+      0,
+      0,
+      72,
+      0,
+      72,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      40,
+      0,
+      44,
+      12,
+      0
+    ],
+    "step": {
+      "tech": "W_WING",
+      "truth": "derived",
+      "placements": [],
+      "eliminations": [
+        {
+          "cell": 78,
+          "digit": 6
+        }
+      ],
+      "primary": [
+        {
+          "cell": 24,
+          "digit": 6
+        },
+        {
+          "cell": 76,
+          "digit": 6
+        }
+      ],
+      "secondary": [
+        {
+          "cell": 67,
+          "digit": 4
+        },
+        {
+          "cell": 69,
+          "digit": 4
+        }
+      ],
+      "labels": {
+        "primary": "cells holding 4 and 6",
+        "secondary": "strong link on 4"
+      },
+      "links": [
+        {
+          "from": [
+            {
+              "cell": 24,
+              "digit": 6
+            }
+          ],
+          "to": [
+            {
+              "cell": 24,
+              "digit": 4
+            }
+          ],
+          "strong": true
+        },
+        {
+          "from": [
+            {
+              "cell": 24,
+              "digit": 4
+            }
+          ],
+          "to": [
+            {
+              "cell": 69,
+              "digit": 4
+            }
+          ],
+          "strong": false,
+          "unit": 15
+        },
+        {
+          "from": [
+            {
+              "cell": 69,
+              "digit": 4
+            }
+          ],
+          "to": [
+            {
+              "cell": 67,
+              "digit": 4
+            }
+          ],
+          "strong": true,
+          "unit": 7
+        },
+        {
+          "from": [
+            {
+              "cell": 67,
+              "digit": 4
+            }
+          ],
+          "to": [
+            {
+              "cell": 76,
+              "digit": 4
+            }
+          ],
+          "strong": false,
+          "unit": 13
+        },
+        {
+          "from": [
+            {
+              "cell": 76,
+              "digit": 4
+            }
+          ],
+          "to": [
+            {
+              "cell": 76,
+              "digit": 6
+            }
+          ],
+          "strong": true
+        }
+      ],
+      "description": "W-Wing: r3c7 and r9c5 both hold 4/6; the strong link on 4 (r8c5–r8c7) forces one of them to be 6, removing 6 from cells seeing both."
+    }
+  },
+  "XY_WING": {
+    "puzzle": ".61.....22...1.....8....5.7..2.316....56.8.9.8.....37..5.3....4..38.........54...",
+    "stepIndex": 40,
+    "values": "561789432237415000984263517792531648345678291816942375150300004403800150600154003",
+    "cands": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      384,
+      160,
+      288,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      384,
+      0,
+      258,
+      96,
+      320,
+      162,
+      0,
+      0,
+      66,
+      0,
+      0,
+      258,
+      96,
+      0,
+      0,
+      288,
+      0,
+      66,
+      384,
+      0,
+      0,
+      0,
+      448,
+      130,
+      0
+    ],
+    "step": {
+      "tech": "XY_WING",
+      "placements": [],
+      "eliminations": [
+        {
+          "cell": 61,
+          "digit": 6
+        },
+        {
+          "cell": 68,
+          "digit": 6
+        }
+      ],
+      "primary": [
+        {
+          "cell": 60,
+          "digit": 7
+        },
+        {
+          "cell": 60,
+          "digit": 9
+        },
+        {
+          "cell": 59,
+          "digit": 7
+        },
+        {
+          "cell": 71,
+          "digit": 9
+        }
+      ],
+      "secondary": [
+        {
+          "cell": 59,
+          "digit": 6
+        },
+        {
+          "cell": 71,
+          "digit": 6
+        }
+      ],
+      "labels": {
+        "primary": "the pivot and the digit each pincer shares with it",
+        "secondary": "6 in each pincer"
+      },
+      "walk": {
+        "frames": [
+          {
+            "text": "The pivot r7c7 holds only 7 and 9.",
+            "show": [
+              "primary"
+            ],
+            "cells": [
+              60
+            ],
+            "labels": {
+              "primary": "the pivot"
+            }
+          },
+          {
+            "text": "If r7c7 is 7, the pincer r7c6 (only 6 and 7) must be 6.",
+            "show": [
+              "secondary"
+            ],
+            "cells": [
+              59
+            ],
+            "labels": {
+              "primary": "the pivot and the digit the pincer shares with it",
+              "secondary": "6 in the pincer"
+            }
+          },
+          {
+            "text": "If r7c7 is 9, the pincer r8c9 (only 6 and 9) must be 6.",
+            "show": [],
+            "cells": [
+              71
+            ]
+          }
+        ],
+        "lead": "Either way a pincer is 6; r7c8 and r8c6 see both."
+      },
+      "description": "XY-Wing: pivot r7c7 (7/9) with pincers r7c6 (6/7) and r8c9 (6/9); one pincer must be 6, so 6 is removed from cells seeing both."
+    }
+  },
+  "XYZ_WING": {
+    "puzzle": "1.4.37..8.32..6..7...8...1...8....7..4..1..3..7....6...8...1...2..6..14.4..57.3.9",
+    "stepIndex": 34,
+    "values": "154037068832106007769800013028060071645719832071008604583001726297683145416572389",
+    "cands": [
+      0,
+      0,
+      0,
+      258,
+      0,
+      0,
+      258,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      280,
+      0,
+      280,
+      272,
+      0,
+      0,
+      0,
+      0,
+      0,
+      26,
+      24,
+      26,
+      0,
+      0,
+      260,
+      0,
+      0,
+      12,
+      0,
+      24,
+      272,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      260,
+      0,
+      0,
+      6,
+      18,
+      0,
+      0,
+      272,
+      0,
+      0,
+      0,
+      0,
+      264,
+      264,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "step": {
+      "tech": "XYZ_WING",
+      "placements": [],
+      "eliminations": [
+        {
+          "cell": 22,
+          "digit": 4
+        }
+      ],
+      "primary": [
+        {
+          "cell": 13,
+          "digit": 5
+        },
+        {
+          "cell": 13,
+          "digit": 9
+        },
+        {
+          "cell": 23,
+          "digit": 5
+        },
+        {
+          "cell": 58,
+          "digit": 9
+        }
+      ],
+      "secondary": [
+        {
+          "cell": 13,
+          "digit": 4
+        },
+        {
+          "cell": 23,
+          "digit": 4
+        },
+        {
+          "cell": 58,
+          "digit": 4
+        }
+      ],
+      "labels": {
+        "primary": "the pivot's 5 and 9, and the one each pincer shares with it",
+        "secondary": "4 in all three cells"
+      },
+      "walk": {
+        "frames": [
+          {
+            "text": "The pivot r2c5 holds only 4, 5 and 9.",
+            "show": [
+              "primary",
+              "secondary"
+            ],
+            "cells": [
+              13
+            ],
+            "labels": {
+              "primary": "the pivot's 5 and 9",
+              "secondary": "4 in the pivot"
+            }
+          },
+          {
+            "text": "If r2c5 is 5, the pincer r3c6 (only 4 and 5) must be 4.",
+            "show": [],
+            "cells": [
+              23
+            ],
+            "labels": {
+              "primary": "the pivot's 5 and 9, and the one the pincer shares with it",
+              "secondary": "4 in the pivot and the pincer"
+            }
+          },
+          {
+            "text": "If r2c5 is 9, the pincer r7c5 (only 4 and 9) must be 4.",
+            "show": [],
+            "cells": [
+              58
+            ]
+          }
+        ],
+        "lead": "Or the pivot is 4 itself. Whichever digit it takes, one of the three cells is 4; r3c5 sees all three."
+      },
+      "description": "XYZ-Wing: pivot r2c5 (4/5/9) with pincers r3c6 (4/5) and r7c5 (4/9). Whichever digit the pivot takes, one of the three cells is 4, so 4 is removed from every cell that sees all three."
+    }
+  }
+}

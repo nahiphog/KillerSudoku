@@ -1,0 +1,18 @@
+.cage-panel { padding: 0 9px; }
+.cage-panel h2 { font-size: 22px; margin-top: 12px; }
+.cage-panel p { font-size: 13px; line-height: 1.8; color: #657160; }
+.cage-panel .hint { font-size: 11px; margin-bottom: 0; }
+button:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+.board td { position: relative; }
+.cage-outline { position: absolute; pointer-events: none; z-index: 1; border-color: #667e55; border-style: dashed; border-width: 0; }
+.cage-outline.cage-top { border-top-width: 1px; }
+.cage-outline.cage-bottom { border-bottom-width: 1px; }
+.cage-outline.cage-left { border-left-width: 1px; }
+.cage-outline.cage-right { border-right-width: 1px; }
+.cage-sum { position: absolute; top: 5px; left: 6px; z-index: 2; padding: 0 2px; background: #fffefa; color: #304b40; font: 700 10px/1.1 'DM Sans', sans-serif; }
+.has-cages .cell-digit { display: inline-block; transform: translateY(4px); }
+.board-panel { align-self: start; }
+@media (max-width: 400px) {
+  .has-cages .cell-digit { font-size: 19px; transform: translateY(5px); }
+  .cage-sum { font-size: 9px; top: 4px; left: 5px; }
+}
