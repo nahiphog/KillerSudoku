@@ -8,7 +8,7 @@
 .candidate-links .link-halo { stroke: #fff; stroke-width: 4; }
 .candidate-links .weak-link { stroke-dasharray: 4 4; }
 .cell-candidates, .cell-digit { z-index: 4; }
-.cell-candidates .support-digit, .cell-candidates .removed-candidate { background: #fff; border-radius: 3px; }
+.cell-candidates .support-digit, .cell-candidates .removed-candidate { background: #fff; border-radius: 3px; justify-self: center; align-self: center; padding: 0 1px; }
 #link-legend { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-top: 6px; font-size: 10px; color: #7739a5; }
 #link-legend[hidden] { display: none; }
 #link-legend span::before { content: ''; display: inline-block; width: 20px; border-top: 2px solid; margin-right: 5px; vertical-align: middle; }
