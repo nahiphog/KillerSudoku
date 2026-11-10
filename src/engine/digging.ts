@@ -8,8 +8,8 @@ function checkDeadline(deadline: number) {
 
 /** Exact search from zero givens; stop at two solutions. Search is used only
  * for certification, never as a deduction in the logical walkthrough. */
-export function countKillerSolutions(cages: Cage[], deadline = Infinity, knownSolution?: number[]): number {
-  return searchKiller(cages, emptyGrid(), 2, deadline, knownSolution).count;
+export function countKillerSolutions(cages: Cage[], deadline = Infinity, knownSolution?: number[], initial = emptyGrid()): number {
+  return searchKiller(cages, initial, 2, deadline, knownSolution).count;
 }
 
 /** Search from the current candidates, with no access to the generated answer. */

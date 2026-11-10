@@ -81,3 +81,16 @@
 .technique-steps button:hover { background: #dbe5d1; }
 #deduction-panel #step-history { padding-left: 0; list-style-position: inside; }
 #deduction-panel #step-history h3 { display: inline; }
+
+/* The generator uses the entire content width; statistics follow the walkthrough. */
+.generation-workspace { display: flex; flex-direction: column; gap: 24px; }
+.generation-workspace > .board-panel { width: 100%; }
+.generation-workspace .grid-frame { width: 100%; }
+.generation-workspace .board-stage { position: static; box-shadow: none; }
+.generation-workspace .cell-digit { font-size: clamp(24px, 4cqw, 48px); }
+.generation-workspace .cell-candidates { font-size: clamp(10px, 1.7cqw, 19px); }
+.generation-workspace > aside { width: 100%; }
+#generation-summary dt { font-size: 17px; }
+#generation-summary dd { font-size: clamp(25px, 3vw, 34px); }
+#generation-live { font-size: 20px; font-variant-numeric: tabular-nums; width: 100%; }
+#generation-live[hidden] { display: none; }

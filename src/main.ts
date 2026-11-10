@@ -1,3 +1,5 @@
+import { generationTimer } from './generationTimer';
+import { customEntryGrid } from './engine/customEntries';
 import './style.css';
 import './cages.css';
 import { cageOptionsError, DEFAULT_CAGE_SIZES, type Cage } from './engine/cages';
@@ -11,9 +13,9 @@ import { scoredTally } from './engine/techniqueScores';
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   ${header.replace('<button id="about"', '<button id="open-settings" type="button" aria-haspopup="dialog">Settings</button><button id="about"')}
-  <div class="generation-toolbar"><div class="generation-actions"><button id="generate" type="button">↻ Generate</button><label class="symmetry-option"><input id="dig-cages" type="checkbox" checked> Dig cages after generation</label><label class="symmetry-option"><input id="dig-pairs" type="checkbox" checked> Dig cages in pairs</label><p>Cage options are available in Settings.</p></div><dl id="generation-summary" aria-label="Generated puzzle details" hidden></dl></div>
+  <div class="generation-toolbar"><div class="generation-actions"><button id="generate" type="button">↻ Generate</button><label class="symmetry-option"><input id="dig-cages" type="checkbox" checked> Dig cages after generation</label><label class="symmetry-option"><input id="dig-pairs" type="checkbox" checked> Dig cages in pairs</label><p>Cage options are available in Settings.</p></div><p id="generation-live" role="timer" hidden></p><dl id="generation-summary" aria-label="Generated puzzle details" hidden></dl></div>
   <main>
-    <div class="workspace">
+    <div class="workspace generation-workspace">
       <section class="board-panel" aria-labelledby="board-title">
         <div class="panel-heading"><h1 id="board-title">Your grid</h1><span class="badge" id="badge">READY TO GENERATE</span></div>
         <div class="board-stage">
@@ -64,6 +66,7 @@ const pairToggle = document.querySelector<HTMLInputElement>('#dig-pairs')!;
 const settings = document.querySelector<HTMLFieldSetElement>('#settings')!;
 const digToggle = document.querySelector<HTMLInputElement>('#dig-cages')!;
 const status = document.querySelector('#status')!;
+const liveTimer = generationTimer(document.querySelector<HTMLElement>('#generation-live')!);
 const errorText = document.querySelector<HTMLParagraphElement>('#settings-error')!;
 const cells = [...document.querySelectorAll<HTMLTableCellElement>('.board td')];
 const gridFrame = document.querySelector<HTMLElement>('.grid-frame')!;
@@ -77,6 +80,7 @@ let generation = 0;
 let worker: Worker | null = null;
 let solution: number[] | null = null;
 let activeCages: Cage[] = [];
+let initialGrid = startSolver();
 let solvingGrid = startSolver();
 let revealSolution = false;
 let walkthroughPosition = 0;
@@ -117,12 +121,12 @@ function paint() {
 }
 function resetSolving(deductions: Deduction[]) {
   history.length = 0;
-  let grid = startSolver();
+  let grid = initialGrid;
   for (const step of deductions) {
     grid = applyDeduction(grid, activeCages, step);
     history.push({ after: grid, step });
   }
-  walkthroughPosition = 0; solvingGrid = startSolver();
+  walkthroughPosition = 0; solvingGrid = initialGrid;
   renderWalkthrough();
 }
 function renderWalkthrough() {
@@ -147,7 +151,7 @@ function renderWalkthrough() {
 function seekWalkthrough(position: number) {
   if (!solution || worker) return;
   walkthroughPosition = Math.max(0, Math.min(history.length, Math.round(position)));
-  solvingGrid = walkthroughPosition ? history[walkthroughPosition - 1].after : startSolver();
+  solvingGrid = walkthroughPosition ? history[walkthroughPosition - 1].after : initialGrid;
   revealSolution = false; candidateToggle.checked = true;
   renderWalkthrough(); paint();
 }
@@ -179,6 +183,7 @@ function validate() {
   updateSolverControls();
 }
 function cancelGeneration() {
+  liveTimer.stop();
   worker?.terminate(); worker = null;
   settings.disabled = false;
   status.textContent = 'Generation cancelled. Your previous puzzle is unchanged.';
@@ -189,7 +194,7 @@ digToggle.addEventListener('change', updateSolverControls);
 function renderBoard(values: number[], cages: Cage[]) {
   const cageForCell = new Map(cages.flatMap(cage => cage.cells.map(cell => [cell, cage] as const)));
   const currentStep = !revealSolution ? history[walkthroughPosition - 1]?.step : undefined;
-  const beforeStep = currentStep ? (walkthroughPosition > 1 ? history[walkthroughPosition - 2].after : startSolver()) : undefined;
+  const beforeStep = currentStep ? (walkthroughPosition > 1 ? history[walkthroughPosition - 2].after : initialGrid) : undefined;
   cells.forEach((cell, i) => {
     const cage = cageForCell.get(i);
     cell.replaceChildren();
@@ -256,10 +261,12 @@ button.addEventListener('click', () => {
   validate();
   if (button.disabled) return;
   const selectedOptions = options();
+  liveTimer.start();
   settings.disabled = true;
   button.disabled = true;
   status.textContent = `Searching for a puzzle and verifying every logical step…`;
   const cleanup = () => {
+    liveTimer.stop();
     worker?.terminate();
     worker = null;
     settings.disabled = false;
@@ -319,13 +326,13 @@ function acceptPuzzle(puzzle: VerifiedPuzzle, custom = false) {
   const summary = document.querySelector<HTMLElement>('#generation-summary')!;
   summary.replaceChildren(); summary.hidden = false;
   const totalRating = scores.reduce((sum, row) => sum + row.score, 0);
-  for (const [label, value] of [['Cages', String(cages.length)], ['Generation time', (elapsedMilliseconds / 1000).toFixed(2) + ' s'], ['Difficulty', difficulty], ['Difficulty rating', totalRating.toLocaleString()]]) {
+  for (const [label, value] of [['Cages', String(cages.length)], ['Generation time', (elapsedMilliseconds / 1000).toFixed(2) + ' s'], ['Difficulty rating', totalRating.toLocaleString()]]) {
     const group = document.createElement('div');
     const term = document.createElement('dt'); term.textContent = label;
     const detail = document.createElement('dd'); detail.textContent = value;
     group.append(term, detail); summary.append(group);
   }
-  solution = values; activeCages = cages; resetSolving(deductions); revealSolution = false; candidateToggle.checked = false;
+  solution = values; activeCages = cages; initialGrid = customEntryGrid(puzzle.entries, cages.map(c => c.cells)); resetSolving(deductions); revealSolution = false; candidateToggle.checked = !!puzzle.entries?.notes.some(Boolean);
   paint();
   generation++;
   document.querySelector('#board-title')!.textContent = custom ? 'Custom grid' : digging ? 'Dug-killer grid' : 'Your grid';

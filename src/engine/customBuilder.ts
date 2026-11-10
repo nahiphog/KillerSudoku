@@ -1,3 +1,5 @@
+import { customEntryGrid } from './customEntries';
+import type { ManualBoard } from './manualPlay';
 import { bit, cloneGrid, digitsOf, emptyGrid, setValue, type Grid } from '../vendor/sudokui/board';
 import { orthogonalNeighbors, type Cage } from './cages';
 import { countKillerSolutions } from './digging';
@@ -24,7 +26,7 @@ export function customLayoutError(groups: number[][]): string | null {
 
 /** Build with the layout's all-different constraints, rather than discarding
  * ordinary Sudoku grids whenever a cage happens to repeat a digit. */
-function fillLayout(groups: number[][], random: () => number, deadline: number): Grid | null {
+function fillLayout(groups: number[][], random: () => number, deadline: number, initial: Grid): Grid | null {
   const groupFor = new Map<number, number[]>();
   for (const group of groups) for (const cell of group) groupFor.set(cell, group);
   let budget = 100000;
@@ -51,28 +53,30 @@ function fillLayout(groups: number[][], random: () => number, deadline: number):
     }
     return null;
   }
-  return fill(emptyGrid());
+  return fill(cloneGrid(initial));
 }
 
-export function generateCustomPuzzle(groups: number[][], limits: GenerationLimits = {}): VerifiedPuzzle {
-  const error = customLayoutError(groups);
+export function generateCustomPuzzle(groups: number[][], limits: GenerationLimits = {}, entries?: ManualBoard): VerifiedPuzzle {
+  const hasEntries = entries?.values.some(Boolean) || entries?.notes.some(Boolean);
+  const error = groups.length || !hasEntries ? customLayoutError(groups) : null;
   if (error) throw new Error(error);
-  if (groups.every(group => group.length === 9)) throw new Error('Nine-cell cages always sum to 45. This layout cannot specify a unique solution. Add smaller cages.');
+  if (!hasEntries && groups.every(group => group.length === 9)) throw new Error('Nine-cell cages always sum to 45. This layout cannot specify a unique solution. Add smaller cages.');
+  const initial = customEntryGrid(entries, groups);
   const started = performance.now();
   const deadline = Date.now() + (limits.maxMilliseconds ?? 45000);
   for (let attempt = 1; attempt <= (limits.maxAttempts ?? 1500) && Date.now() < deadline; attempt++) {
     limits.onProgress?.(attempt);
-    const grid = fillLayout(groups, limits.random ?? Math.random, deadline);
+    const grid = fillLayout(groups, limits.random ?? Math.random, deadline, initial);
     if (!grid) continue;
     const values = Array.from(grid.values);
     const cages: Cage[] = groups.map(cells => ({ cells: [...cells].sort((a, b) => a - b), sum: cells.reduce((sum, cell) => sum + values[cell], 0) }));
     // A difficult candidate must not consume the entire search allowance.
     let count: number;
-    try { count = countKillerSolutions(cages, Math.min(deadline, Date.now() + 2000), values); }
+    try { count = countKillerSolutions(cages, Math.min(deadline, Date.now() + 2000), values, initial); }
     catch { continue; }
     if (count !== 1) continue;
-    const proof = traceLogically(cages, Math.min(deadline, Date.now() + 5000));
-    return { values, cages, attempts: attempt, logicallySolved: proof?.complete ?? false,
+    const proof = traceLogically(cages, deadline, true, initial);
+    return { values, cages, entries: entries ? { values: [...entries.values], notes: [...entries.notes] } : undefined, attempts: attempt, logicallySolved: !!proof?.complete && !proof.techniqueTally['Brute Force'],
       deductions: proof?.deductions ?? [], techniqueTally: proof?.techniqueTally ?? {},
       proofSteps: proof?.steps ?? 0, difficulty: proof?.difficulty ?? 'Easy',
       hardestTechnique: proof?.hardestTechnique ?? 'Not rated', elapsedMilliseconds: performance.now() - started };

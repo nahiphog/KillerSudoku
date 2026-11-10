@@ -9,3 +9,18 @@
 .site-header { flex-wrap: wrap; gap: 16px; }
 .site-header nav { flex-wrap: wrap; }
 @media (max-width: 480px) { .site-header nav { gap: 12px; font-size: 12px; } }
+
+.entry-panel { padding: 22px; background: white; border: 1px solid #dedfd4; border-radius: 14px; }
+.entry-panel p { font-size: 13px; line-height: 1.7; }
+.entry-modes, .custom-number-pad { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.entry-modes button, .custom-number-pad button { width: auto; margin: 0; padding: 9px 12px; }
+.entry-modes button[aria-pressed="false"] { background: #edf1e5; color: #2f503d; }
+.custom-board { container-type: inline-size; }
+.custom-board tr { height: max(55px, 6vw); }
+.custom-board .custom-digit { position: relative; z-index: 2; display: inline-block; transform: translateY(4px); }
+.custom-notes { position: absolute; inset: 18px 5px 4px; display: grid; grid-template-columns: repeat(3,1fr); grid-template-rows: repeat(3,1fr); font: 12px/1 sans-serif; }
+.custom-notes span { display: grid; place-items: center; }
+.custom-board td.entry-focused { box-shadow: inset 0 0 0 3px #397ca6; }
+#entry-error { color: #8c2828; }
+#build-live { font-size: 20px; font-variant-numeric: tabular-nums; }
+@media(max-width:400px) { .custom-notes { inset: 15px 3px 3px; font-size: 10px; } .custom-board tr { height: 40px; } }

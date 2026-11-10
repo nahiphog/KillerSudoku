@@ -1,5 +1,6 @@
 import { digCages, solveKillerBySearch, type DigProgress } from './digging';
-import { bit } from '../vendor/sudokui/board';
+import type { ManualBoard } from './manualPlay';
+import { bit, cloneGrid, type Grid } from '../vendor/sudokui/board';
 import { generateFullGrid } from './generator';
 import { cageOptionsError, DEFAULT_CAGE_SIZES, generateCages, type Cage, type CageOptions } from './cages';
 import { applyDeduction, nextKillerStep, startSolver, type Deduction } from './killerSolver';
@@ -11,8 +12,8 @@ export type PuzzleOptions = CageOptions & { dig?: boolean; digPairs?: boolean };
 /** Logical traces prove uniqueness when complete without search. Optional
  * search fallback is reserved for walkthroughs of already verified puzzles;
  * proveLogically never enables it. No generated answer enters the solver. */
-export function traceLogically(cages: Cage[], deadline = Infinity, allowBruteForce = false): LogicalProof | null {
-  let grid = startSolver();
+export function traceLogically(cages: Cage[], deadline = Infinity, allowBruteForce = false, initial?: Grid): LogicalProof | null {
+  let grid = initial ? cloneGrid(initial) : startSolver();
   let searchedSolution: number[] | null = null;
   let hardestTechnique = 'Cage combinations';
   const deductions: Deduction[] = [];
@@ -49,7 +50,7 @@ export function proveLogically(cages: Cage[], deadline = Infinity): LogicalProof
   return trace?.complete ? trace : null;
 }
 
-export interface VerifiedPuzzle { logicallySolved: boolean; digging?: DigProgress; values: number[]; cages: Cage[]; proofSteps: number; attempts: number; difficulty: Difficulty; hardestTechnique: string; deductions: Deduction[]; techniqueTally: Record<string, number>; elapsedMilliseconds: number }
+export interface VerifiedPuzzle { entries?: ManualBoard; logicallySolved: boolean; digging?: DigProgress; values: number[]; cages: Cage[]; proofSteps: number; attempts: number; difficulty: Difficulty; hardestTechnique: string; deductions: Deduction[]; techniqueTally: Record<string, number>; elapsedMilliseconds: number }
 export interface GenerationLimits {
   maxDigMilliseconds?: number;
   onDigProgress?: (progress: DigProgress) => void;
