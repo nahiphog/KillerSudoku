@@ -18,7 +18,8 @@ button:disabled { opacity: .45; cursor: not-allowed; transform: none; }
 }
 
 .panel-heading h1 { font: 600 17px 'DM Sans', sans-serif; letter-spacing: 0; }
-.site-header nav { display: flex; align-items: center; gap: 22px; font-size: 13px; }
+.site-header { flex-wrap: wrap; gap: 16px; }
+.site-header nav { display: flex; flex-wrap: wrap; align-items: center; gap: 22px; font-size: 13px; }
 .site-header nav a { text-underline-offset: 4px; }
 .site-header nav button { width: auto; margin: 0; padding: 9px 16px; }
 fieldset { border: 0; margin: 22px 0 0; padding: 0; min-width: 0; }

@@ -70,3 +70,14 @@
   .cell-candidates { inset: 13px 4px 3px; font-size: min(10px, calc((100cqw / 9 - 20px) / 3)); }
   #technique-tally { font-size: 11px; }
 }
+
+.generation-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; width: 100%; }
+#generation-summary { display: flex; flex-wrap: wrap; gap: 14px 28px; margin: 0; width: 100%; font-size: 13px; }
+#generation-summary[hidden] { display: none; }
+#generation-summary dt { color: #657160; font-size: 11px; margin-bottom: 4px; }
+#generation-summary dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+#technique-tally .technique-steps { text-align: left; }
+.technique-steps button { display: inline-flex; justify-content: center; width: auto; min-width: 30px; padding: 5px 6px; margin: 2px; font-size: 11px; background: #edf1e5; color: #2f503d; }
+.technique-steps button:hover { background: #dbe5d1; }
+#deduction-panel #step-history { padding-left: 0; list-style-position: inside; }
+#deduction-panel #step-history h3 { display: inline; }

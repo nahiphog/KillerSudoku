@@ -21,6 +21,8 @@ export type SolverResult =
   | { status: 'solved' | 'stalled' | 'contradiction'; message: string };
 
 const tables = new Map(Array.from({ length: 8 }, (_, i) => [i + 2, combinationTable(i + 2)]));
+// Custom layouts may use a single-cell cage, whose sum fixes its digit.
+tables.set(1, Array.from({ length: 9 }, (_, i) => ({ sum: i + 1, combinations: [[i + 1]] })));
 export const startSolver = (): Grid => emptyGrid();
 // Exhaust easier bands before trying a harder deduction, for meaningful ratings.
 const logicalOrder = TECHNIQUES.filter(t => t.id !== 'BRUTE_FORCE')
