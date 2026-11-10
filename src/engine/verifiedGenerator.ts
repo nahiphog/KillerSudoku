@@ -83,11 +83,21 @@ export function generateVerifiedPuzzle(options: PuzzleOptions, limits: Generatio
     let digging: DigProgress | undefined;
     if (options.dig) {
       const digDeadline = Date.now() + (limits.maxDigMilliseconds ?? 120000);
-      const result = digCages(cages, random, digDeadline, limits.onDigProgress, Array.from(grid.values), (options.digPairs ?? true) && options.symmetric !== false);
+      const requireLogicalSolve = options.logicOnly !== false;
+      const preservesLogicalSolve = (trial: Cage[]) => {
+        const candidateProof = proveLogically(trial, digDeadline);
+        return !!candidateProof && candidateProof.values.every((value, i) => value === grid.values[i]);
+      };
+      const result = digCages(cages, random, digDeadline, limits.onDigProgress, Array.from(grid.values),
+        (options.digPairs ?? true) && options.symmetric !== false, requireLogicalSolve ? preservesLogicalSolve : undefined);
       cages = result.cages;
       digging = { tested: result.tested, total: result.total, removed: result.removed, paired: result.paired };
-      proof = traceLogically(cages, digDeadline, options.logicOnly === false);
+      proof = requireLogicalSolve ? proveLogically(cages, digDeadline) : traceLogically(cages, digDeadline, true);
       if (!proof) throw new Error('Unable to finish the dug puzzle walkthrough within the time limit. Try again.');
+    }
+    if (options.logicOnly !== false && (!proof.complete || proof.techniqueTally['Brute Force']
+      || proof.values.some((value, i) => value !== grid.values[i]))) {
+      throw new Error('A complete logical solution could not be verified. Your previous puzzle is unchanged.');
     }
     return { logicallySolved: proof.complete && !proof.techniqueTally['Brute Force'], digging, values: Array.from(grid.values), cages, proofSteps: proof.steps, attempts: attempt, difficulty: proof.difficulty, hardestTechnique: proof.hardestTechnique, deductions: proof.deductions, techniqueTally: proof.techniqueTally, elapsedMilliseconds: performance.now() - started };
   }

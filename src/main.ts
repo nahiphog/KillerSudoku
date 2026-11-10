@@ -13,7 +13,7 @@ import { scoredTally } from './engine/techniqueScores';
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   ${header.replace('<button id="about"', '<button id="open-settings" type="button" aria-haspopup="dialog">Settings</button><button id="about"')}
-  <div class="generation-toolbar"><div class="generation-actions"><button id="generate" type="button">↻ Generate</button><label class="symmetry-option"><input id="dig-cages" type="checkbox" checked> Dig cages after generation</label><label class="symmetry-option"><input id="dig-pairs" type="checkbox" checked> Dig cages in pairs</label><label class="symmetry-option"><input id="logic-only" type="checkbox" checked title="Applies to the next generated puzzle. Stops when logical techniques are exhausted."> Logic-only walkthrough</label><p>Cage options are available in Settings.</p></div><p id="generation-live" role="timer" hidden></p><dl id="generation-summary" aria-label="Generated puzzle details" hidden></dl></div>
+  <div class="generation-toolbar"><div class="generation-actions"><button id="generate" type="button">↻ Generate</button><label class="symmetry-option"><input id="dig-cages" type="checkbox" checked> Dig cages after generation</label><label class="symmetry-option"><input id="dig-pairs" type="checkbox" checked> Dig cages in pairs</label><label class="symmetry-option"><input id="logic-only" type="checkbox" checked title="Applies to the next generated puzzle. Every cell must be solvable with logical techniques; digging must preserve this complete solve."> Require a complete logical solve</label><p>Cage options are available in Settings.</p></div><p id="generation-live" role="timer" hidden></p><dl id="generation-summary" aria-label="Generated puzzle details" hidden></dl></div>
   <main>
     <div class="workspace generation-workspace">
       <section class="board-panel" aria-labelledby="board-title">
@@ -287,10 +287,10 @@ button.addEventListener('click', () => {
   try {
     worker = new Worker(new URL('./engine/generation.worker.ts', import.meta.url), { type: 'module' });
     updateSolverControls();
-    worker.onmessage = (event: MessageEvent<Partial<VerifiedPuzzle> & { error?: string; progress?: number; diggingProgress?: { tested: number; total: number; removed: number } }>) => {
+    worker.onmessage = (event: MessageEvent<Partial<VerifiedPuzzle> & { error?: string; progress?: number; diggingProgress?: { tested: number; total: number; removed: number; pass?: number } }>) => {
       const { values, cages, error, progress, proofSteps, difficulty, hardestTechnique: hardest, deductions, techniqueTally, elapsedMilliseconds, attempts, digging, diggingProgress, logicallySolved: complete } = event.data;
       if (diggingProgress) {
-        status.textContent = 'Digging: testing cage ' + Math.min(diggingProgress.tested + 1, diggingProgress.total) + ' of ' + diggingProgress.total + ' · ' + diggingProgress.removed + ' removed.';
+        status.textContent = 'Digging' + (diggingProgress.pass && diggingProgress.pass > 1 ? ' (pass ' + diggingProgress.pass + ')' : '') + ': testing cage ' + Math.min(diggingProgress.tested + 1, diggingProgress.total) + ' of ' + diggingProgress.total + ' · ' + diggingProgress.removed + ' removed.';
         return;
       }
       if (progress !== undefined) {

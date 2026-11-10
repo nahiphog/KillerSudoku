@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { countKillerSolutions, digCages, cageDigGroups } from '../src/engine/digging';
-import { generateVerifiedPuzzle } from '../src/engine/verifiedGenerator';
+import { generateVerifiedPuzzle, proveLogically } from '../src/engine/verifiedGenerator';
 import { applyDeduction, nextKillerStep, startSolver } from '../src/engine/killerSolver';
 import { UNITS } from '../src/vendor/sudokui/board';
 const rng = (seed: number) => () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
@@ -56,17 +56,36 @@ describe('exact cage digging', () => {
    expect(cageDigGroups(cages,false)).toHaveLength(3);
    expect(()=>cageDigGroups(cages.slice(0,1),true)).toThrow('rotationally symmetric');
  });
- it('defaults to pair digging and preserves symmetry and pair irreducibility', () => {
+ it('defaults to pair digging and preserves a complete logical solve', () => {
    const puzzle = generateVerifiedPuzzle({dig:true}, {random:rng(3),maxDigMilliseconds:120000});
    expect(puzzle.digging?.paired).toBe(true);
    expect(puzzle.techniqueTally['Brute Force']).toBeUndefined();
    expect(puzzle.deductions.every(step=>step.technique !== 'Brute Force')).toBe(true);
    let replay = startSolver();
    for(const step of puzzle.deductions) replay = applyDeduction(replay,puzzle.cages,step);
-   expect(nextKillerStep(replay,puzzle.cages).status).toBe(puzzle.logicallySolved ? 'solved' : 'stalled');
+   expect(puzzle.logicallySolved).toBe(true);
+   expect(nextKillerStep(replay,puzzle.cages).status).toBe('solved');
+   expect(Array.from(replay.values)).toEqual(puzzle.values);
    expect(puzzle.digging!.removed).toBeGreaterThan(0);
    expect(countKillerSolutions(puzzle.cages,Date.now()+120000,puzzle.values)).toBe(1);
    for(const group of cageDigGroups(puzzle.cages,true)) {
-     expect(countKillerSolutions(puzzle.cages.filter(c=>!group.includes(c)),Date.now()+120000,puzzle.values)).toBe(2);
+     expect(proveLogically(puzzle.cages.filter(c=>!group.includes(c)))).toBeNull();
    }
  },180000);
+
+ it('also preserves complete logic with individual digging explicitly enabled', () => {
+   const puzzle = generateVerifiedPuzzle({dig:true, digPairs:false, logicOnly:true}, {random:rng(1),maxDigMilliseconds:120000});
+   expect(puzzle.logicallySolved).toBe(true);
+   expect(puzzle.techniqueTally['Brute Force']).toBeUndefined();
+   expect(puzzle.digging!.removed).toBeGreaterThan(0);
+   const proof = proveLogically(puzzle.cages)!;
+   expect(proof.complete).toBe(true);
+   expect(proof.values).toEqual(puzzle.values);
+   expect(proof.deductions).toEqual(puzzle.deductions);
+ },180000);
+ it('retains cages whenever the additional acceptance requirement rejects removal', () => {
+   const base = generateVerifiedPuzzle({}, {random:rng(3)});
+   const dug = digCages(base.cages,rng(4),Date.now()+30000,undefined,base.values,true,()=>false);
+   expect(dug.cages).toEqual(base.cages);
+   expect(dug.removed).toBe(0);
+ });

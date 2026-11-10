@@ -100,7 +100,7 @@ function searchKiller(cages: Cage[], initial: Grid, limit: number, deadline: num
   return { count, solution };
 }
 
-export interface DigProgress { tested: number; total: number; removed: number; paired?: boolean }
+export interface DigProgress { tested: number; total: number; removed: number; paired?: boolean; pass?: number }
 export function cageDigGroups(cages: Cage[], paired: boolean): Cage[][] {
   if (!paired) return cages.map(cage => [cage]);
   const key = (cells: number[]) => [...cells].sort((a,b)=>a-b).join(',');
@@ -116,21 +116,32 @@ export function cageDigGroups(cages: Cage[], paired: boolean): Cage[][] {
   }
   return groups;
 }
-export function digCages(cages: Cage[], random = Math.random, deadline = Infinity, onProgress?: (progress: DigProgress) => void, knownSolution?: number[], paired = false) {
+export function digCages(cages: Cage[], random = Math.random, deadline = Infinity, onProgress?: (progress: DigProgress) => void, knownSolution?: number[], paired = false, canRemove?: (trial: Cage[]) => boolean) {
   const order = cageDigGroups(cages, paired);
   if (countKillerSolutions(cages, deadline, knownSolution) !== 1) throw new Error('Digging requires a verified unique starting puzzle.');
   for (let i = order.length - 1; i > 0; i--) { const j = Math.floor(random() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; }
   let remaining = [...cages];
-  let tested = 0;
-  for (let i = 0; i < order.length; i++) {
-    onProgress?.({ tested, total: cages.length, removed: cages.length - remaining.length, paired });
-    const trial = remaining.filter(c => !order[i].includes(c));
-    if (countKillerSolutions(trial, deadline, knownSolution) === 1) remaining = trial;
-    tested += order[i].length;
-  }
-  // Removing more constraints cannot restore uniqueness to a rejected trial.
-  // Thus one shuffled pass proves every retained removal group is indispensable.
-  const summary = { tested, total: cages.length, removed: cages.length - remaining.length, paired };
+  let pass = 0;
+  let changed: boolean;
+  do {
+    changed = false; pass++;
+    let tested = 0;
+    for (const group of order) {
+      checkDeadline(deadline);
+      onProgress?.({ tested, total: cages.length, removed: cages.length - remaining.length, paired, pass });
+      tested += group.length;
+      if (!remaining.includes(group[0])) continue;
+      const trial = remaining.filter(c => !group.includes(c));
+      const accepted = !canRemove || canRemove(trial);
+      checkDeadline(deadline); // An unfinished logical proof never counts as a decision.
+      if (accepted && countKillerSolutions(trial, deadline, knownSolution) === 1) {
+        remaining = trial; changed = true;
+      }
+    }
+    // Uniqueness failures are monotonic. Availability of a particular logical
+    // technique need not be, so revisit retained groups after successful removals.
+  } while (canRemove && changed);
+  const summary = { tested: cages.length, total: cages.length, removed: cages.length - remaining.length, paired, pass };
   onProgress?.(summary);
   return { cages: remaining, ...summary };
 }
