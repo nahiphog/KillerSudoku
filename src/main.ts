@@ -14,7 +14,7 @@ import { scoredTally } from './engine/techniqueScores';
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   ${header.replace('<button id="about"', '<button id="open-settings" type="button" aria-haspopup="dialog">Settings</button><button id="about"')}
-  <div class="generation-toolbar"><button id="generate" type="button">↻ Generate</button><button id="cancel-generation" type="button" hidden>Cancel generation</button><p>Cage options are available in Settings.</p></div>
+  <div class="generation-toolbar"><button id="generate" type="button">↻ Generate</button><label class="symmetry-option"><input id="dig-cages" type="checkbox" checked> Dig cages after generation</label><button id="cancel-generation" type="button" hidden>Cancel generation</button><p>Cage options are available in Settings.</p></div>
   <main>
     <div class="workspace">
       <section class="board-panel" aria-labelledby="board-title">
@@ -43,7 +43,8 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         </section>
       </section>
       <aside>
-        <section class="generate-panel"><h2>Generate a puzzle grid</h2><p>Every puzzle has a verified unique solution. Standard generation also guarantees a complete logical solve. Enable cage digging in Settings to remove cages while preserving uniqueness.</p>
+        <section class="generate-panel"><h2>Generate a puzzle grid</h2><p>Every puzzle has a verified unique solution. Standard generation also guarantees a complete logical solve. Use the digging option beside Generate to remove cages while preserving uniqueness.</p>
+          <p class="setting-help">Try removing cages in random order, keeping each removal only if exactly one solution remains. Stop when no remaining cage can be removed. Cells outside cages follow normal Sudoku rules. Digging can break rotational symmetry and may leave an incomplete logical walkthrough.</p>
           <p id="settings-error" class="error" role="alert" hidden></p>
           <p class="hint">Settings apply to the next generated grid.</p>
         </section>
@@ -58,8 +59,6 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   </main>
   <dialog id="settings-dialog" aria-labelledby="settings-title"><h2 id="settings-title">Settings</h2><p>Changes apply to the next generated puzzle. Any difficulty is accepted; every puzzle must still have a verified unique solution.</p>
           <fieldset id="settings"><legend>Generation settings</legend>
-<label class="symmetry-option"><input id="dig-cages" type="checkbox"> Dig cages after generation</label>
-<p class="setting-help">Try removing cages in random order, keeping each removal only if exactly one solution remains. Stop when no remaining cage can be removed. Cells outside cages follow normal Sudoku rules. Digging can break rotational symmetry and may leave an incomplete logical walkthrough.</p>
             <label class="symmetry-option"><input id="symmetry" type="checkbox" checked> Rotationally symmetric cages</label>
             <p class="setting-help">Cage shapes match after a 180° turn.</p>
             <fieldset class="size-options"><legend>Allowed cells per cage</legend>
@@ -80,6 +79,7 @@ settingsDialog.addEventListener('click', event => {
 const button = document.querySelector<HTMLButtonElement>('#generate')!;
 const cancelGeneration = document.querySelector<HTMLButtonElement>('#cancel-generation')!;
 const settings = document.querySelector<HTMLFieldSetElement>('#settings')!;
+const digToggle = document.querySelector<HTMLInputElement>('#dig-cages')!;
 const status = document.querySelector('#status')!;
 const errorText = document.querySelector<HTMLParagraphElement>('#settings-error')!;
 const cells = [...document.querySelectorAll<HTMLTableCellElement>('.board td')];
@@ -124,6 +124,7 @@ const manualMessage = document.querySelector('#manual-message')!;
 function canEdit() { return !!solution && !worker && !revealSolution && boardView === 'manual'; }
 function updateSolverControls() {
   const busy = !!worker;
+  digToggle.disabled = busy;
   toggleSolution.disabled = !solution || busy;
   candidateToggle.disabled = !solution || busy || revealSolution || boardView === 'manual';
   nextButton.disabled = !solution || busy || walkthroughPosition === history.length;
@@ -246,7 +247,7 @@ resetButton.addEventListener('click', () => seekWalkthrough(0));
 undoButton.addEventListener('click', () => seekWalkthrough(walkthroughPosition - 1));
 nextButton.addEventListener('click', () => seekWalkthrough(walkthroughPosition + 1));
 const options = (): PuzzleOptions => ({
-  dig: document.querySelector<HTMLInputElement>('#dig-cages')!.checked,
+  dig: digToggle.checked,
   symmetric: document.querySelector<HTMLInputElement>('#symmetry')!.checked,
   sizes: [...document.querySelectorAll<HTMLInputElement>('input[name="size"]:checked')].map(input => Number(input.value)),
 });
