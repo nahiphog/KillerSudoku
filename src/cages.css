@@ -4,7 +4,7 @@
 .cage-panel .hint { font-size: 11px; margin-bottom: 0; }
 button:disabled { opacity: .45; cursor: not-allowed; transform: none; }
 .board td { position: relative; background: #fff; }
-.cage-outline { position: absolute; pointer-events: none; z-index: 1; border-color: #667e55; border-style: dashed; border-width: 0; }
+.cage-outline { position: absolute; pointer-events: none; z-index: 1; border-color: #7739a5; border-style: dashed; border-width: 0; }
 .cage-outline.cage-top { border-top-width: 1px; }
 .cage-outline.cage-bottom { border-bottom-width: 1px; }
 .cage-outline.cage-left { border-left-width: 1px; }

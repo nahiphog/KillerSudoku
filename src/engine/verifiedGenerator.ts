@@ -1,4 +1,4 @@
-import { digCages, type DigProgress } from './digging';
+import { digCages, solveKillerBySearch, type DigProgress } from './digging';
 import { bit } from '../vendor/sudokui/board';
 import { generateFullGrid } from './generator';
 import { cageOptionsError, DEFAULT_CAGE_SIZES, generateCages, type Cage, type CageOptions } from './cages';
@@ -6,25 +6,35 @@ import { applyDeduction, nextKillerStep, startSolver, type Deduction } from './k
 import { techniqueDifficulty, techniqueRank, type Difficulty } from './difficulty';
 
 export interface LogicalProof { values: number[]; complete: boolean; steps: number; difficulty: Difficulty; hardestTechnique: string; deductions: Deduction[]; techniqueTally: Record<string, number> }
-export type PuzzleOptions = CageOptions & { dig?: boolean };
+export type PuzzleOptions = CageOptions & { dig?: boolean; digPairs?: boolean };
 
-/** A complete chain of solution-preserving deductions proves existence AND
- * uniqueness. No guessing, solution counter or hidden digits enter the solver.
- * Traces can stop at a logical stall; proveLogically accepts only complete ones.
- * The optional deadline rejects unfinished analysis.
- */
-export function traceLogically(cages: Cage[], deadline = Infinity): LogicalProof | null {
+/** Logical traces prove uniqueness when complete without search. Optional
+ * search fallback is reserved for walkthroughs of already verified puzzles;
+ * proveLogically never enables it. No generated answer enters the solver. */
+export function traceLogically(cages: Cage[], deadline = Infinity, allowBruteForce = false): LogicalProof | null {
   let grid = startSolver();
+  let searchedSolution: number[] | null = null;
   let hardestTechnique = 'Cage combinations';
   const deductions: Deduction[] = [];
   const techniqueTally: Record<string, number> = {};
   for (let steps = 0; steps <= 810; steps++) {
     if (Date.now() >= deadline) return null;
-    const result = nextKillerStep(grid, cages);
-    if (result.status === 'solved' || result.status === 'stalled') return { complete: result.status === 'solved', values: Array.from(grid.values), steps, difficulty: techniqueDifficulty(hardestTechnique), hardestTechnique, deductions, techniqueTally };
-    if (result.status !== 'step' || result.step.technique === 'Brute Force') return null;
+    let result = nextKillerStep(grid, cages);
+    if (result.status === 'stalled' && allowBruteForce) {
+      searchedSolution ??= solveKillerBySearch(cages, grid, deadline);
+      if (!searchedSolution) return null;
+      const cell = Array.from(grid.values).findIndex(value => !value);
+      const digit = searchedSolution[cell];
+      result = { status: 'step', step: {
+        technique: 'Brute Force',
+        description: 'All available logical techniques are exhausted. Cage-aware backtracking searches the remaining candidates while enforcing every row, column, box and cage. Place ' + digit + ' in r' + (Math.floor(cell / 9) + 1) + 'c' + (cell % 9 + 1) + ' from the searched solution, then retry logical techniques. This is a search step, rated 10000 per use.',
+        placements: [{cell, digit}], eliminations: [], cells: [cell], supportCells: [], supportDigits: [],
+      } };
+    }
+    if (result.status === 'solved' || result.status === 'stalled') return { complete: result.status === 'solved', values: Array.from(grid.values), steps, difficulty: hardestTechnique === 'Brute Force' ? 'Expert' : techniqueDifficulty(hardestTechnique), hardestTechnique, deductions, techniqueTally };
+    if (result.status !== 'step') return null;
     const step = result.step;
-    if (techniqueRank(step.technique) > techniqueRank(hardestTechnique)) hardestTechnique = step.technique;
+    if (step.technique === 'Brute Force' || (hardestTechnique !== 'Brute Force' && techniqueRank(step.technique) > techniqueRank(hardestTechnique))) hardestTechnique = step.technique;
     if (!step.placements.some(p => !grid.values[p.cell] && (grid.cands[p.cell] & bit(p.digit)))
       && !step.eliminations.some(e => !grid.values[e.cell] && (grid.cands[e.cell] & bit(e.digit)))) return null;
     grid = applyDeduction(grid, cages, step);
@@ -72,13 +82,13 @@ export function generateVerifiedPuzzle(options: PuzzleOptions, limits: Generatio
     let digging: DigProgress | undefined;
     if (options.dig) {
       const digDeadline = Date.now() + (limits.maxDigMilliseconds ?? 120000);
-      const result = digCages(cages, random, digDeadline, limits.onDigProgress, Array.from(grid.values));
+      const result = digCages(cages, random, digDeadline, limits.onDigProgress, Array.from(grid.values), (options.digPairs ?? true) && options.symmetric !== false);
       cages = result.cages;
-      digging = { tested: result.tested, total: result.total, removed: result.removed };
-      proof = traceLogically(cages, digDeadline);
+      digging = { tested: result.tested, total: result.total, removed: result.removed, paired: result.paired };
+      proof = traceLogically(cages, digDeadline, true);
       if (!proof) throw new Error('Unable to finish the dug puzzle walkthrough within the time limit. Try again.');
     }
-    return { logicallySolved: proof.complete, digging, values: Array.from(grid.values), cages, proofSteps: proof.steps, attempts: attempt, difficulty: proof.difficulty, hardestTechnique: proof.hardestTechnique, deductions: proof.deductions, techniqueTally: proof.techniqueTally, elapsedMilliseconds: performance.now() - started };
+    return { logicallySolved: proof.complete && !proof.techniqueTally['Brute Force'], digging, values: Array.from(grid.values), cages, proofSteps: proof.steps, attempts: attempt, difficulty: proof.difficulty, hardestTechnique: proof.hardestTechnique, deductions: proof.deductions, techniqueTally: proof.techniqueTally, elapsedMilliseconds: performance.now() - started };
   }
   throw new Error(`No uniquely solvable puzzle was verified within this search. Try again or allow more cage sizes. Your previous puzzle is unchanged.`);
 }

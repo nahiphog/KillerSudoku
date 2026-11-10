@@ -13,3 +13,8 @@ it('sorts by per-use rating rather than use count or weighted total', () => {
   expect(rows.map(row => row.technique)).toEqual(['Cage remainder', 'Full House', 'Naked Single', 'X-Wing']);
   expect(rows.reduce((sum, row) => sum + row.score, 0)).toBe(464);
 });
+
+it('rates each Brute Force use at 10000 and lists it last', () => {
+ const rows = scoredTally({'Brute Force':2,'Cage remainder':1});
+ expect(rows.at(-1)).toEqual({technique:'Brute Force',count:2,rating:10000,score:20000});
+});

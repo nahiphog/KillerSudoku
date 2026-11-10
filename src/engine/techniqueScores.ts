@@ -2,6 +2,7 @@ import { TECHS, type Tech } from '../vendor/sudokui/ratings';
 import { TECHNIQUES } from './solver';
 
 export function techniqueScore(name: string): number {
+  if (name === 'Brute Force') return 10000;
   if (name === 'Cage combinations' || name === 'Cage remainder') return 3;
   const technique = TECHNIQUES.find(technique => technique.name === name);
   if (!technique) throw new Error('Unknown technique: ' + name);

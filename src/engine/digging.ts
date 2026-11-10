@@ -9,9 +9,19 @@ function checkDeadline(deadline: number) {
 /** Exact search from zero givens; stop at two solutions. Search is used only
  * for certification, never as a deduction in the logical walkthrough. */
 export function countKillerSolutions(cages: Cage[], deadline = Infinity, knownSolution?: number[]): number {
+  return searchKiller(cages, emptyGrid(), 2, deadline, knownSolution).count;
+}
+
+/** Search from the current candidates, with no access to the generated answer. */
+export function solveKillerBySearch(cages: Cage[], grid: Grid, deadline = Infinity): number[] | null {
+  return searchKiller(cages, grid, 1, deadline).solution;
+}
+
+function searchKiller(cages: Cage[], initial: Grid, limit: number, deadline: number, knownSolution?: number[]) {
   const cells = cages.flatMap(c => c.cells);
   if (new Set(cells).size !== cells.length || cells.some(i => !Number.isInteger(i) || i < 0 || i > 80)) throw new Error('Invalid cage cells.');
   let count = 0;
+  let solution: number[] | null = null;
   const cache = new Map<Cage, Map<string, ReturnType<typeof cageSupports>>>();
   const neighbors = Array.from({length:81}, (_, cell) => [...new Set([...PEERS[cell], ...cages.find(c=>c.cells.includes(cell))?.cells ?? []])].filter(i=>i!==cell));
   function search(grid: Grid) {
@@ -80,30 +90,47 @@ export function countKillerSolutions(cages: Cage[], deadline = Infinity, knownSo
       const score = popcount(grid.cands[cell]) * 100 - neighbors[cell].filter(i=>!grid.values[i]).length;
       if (score < best) { best = score; target = cell; }
     }
-    if (target < 0) { count++; return; }
+    if (target < 0) { count++; solution = Array.from(grid.values); return; }
     for (const digit of digitsOf(grid.cands[target]).sort((a,b) => Number(b === knownSolution?.[target]) - Number(a === knownSolution?.[target]))) {
       const next = cloneGrid(grid); setValue(next, target, digit); search(next);
-      if (count >= 2) return;
+      if (count >= limit) return;
     }
   }
-  search(emptyGrid());
-  return count;
+  search(cloneGrid(initial));
+  return { count, solution };
 }
 
-export interface DigProgress { tested: number; total: number; removed: number }
-export function digCages(cages: Cage[], random = Math.random, deadline = Infinity, onProgress?: (progress: DigProgress) => void, knownSolution?: number[]) {
+export interface DigProgress { tested: number; total: number; removed: number; paired?: boolean }
+export function cageDigGroups(cages: Cage[], paired: boolean): Cage[][] {
+  if (!paired) return cages.map(cage => [cage]);
+  const key = (cells: number[]) => [...cells].sort((a,b)=>a-b).join(',');
+  const byShape = new Map(cages.map(cage => [key(cage.cells), cage]));
+  const seen = new Set<Cage>();
+  const groups: Cage[][] = [];
+  for (const cage of cages) {
+    if (seen.has(cage)) continue;
+    const partner = byShape.get(key(cage.cells.map(cell => 80 - cell)));
+    if (!partner) throw new Error('Pair digging requires rotationally symmetric cages.');
+    seen.add(cage); seen.add(partner);
+    groups.push(partner === cage ? [cage] : [cage, partner]);
+  }
+  return groups;
+}
+export function digCages(cages: Cage[], random = Math.random, deadline = Infinity, onProgress?: (progress: DigProgress) => void, knownSolution?: number[], paired = false) {
+  const order = cageDigGroups(cages, paired);
   if (countKillerSolutions(cages, deadline, knownSolution) !== 1) throw new Error('Digging requires a verified unique starting puzzle.');
-  const order = [...cages];
   for (let i = order.length - 1; i > 0; i--) { const j = Math.floor(random() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; }
   let remaining = [...cages];
+  let tested = 0;
   for (let i = 0; i < order.length; i++) {
-    onProgress?.({ tested: i, total: order.length, removed: cages.length - remaining.length });
-    const trial = remaining.filter(c => c !== order[i]);
+    onProgress?.({ tested, total: cages.length, removed: cages.length - remaining.length, paired });
+    const trial = remaining.filter(c => !order[i].includes(c));
     if (countKillerSolutions(trial, deadline, knownSolution) === 1) remaining = trial;
+    tested += order[i].length;
   }
   // Removing more constraints cannot restore uniqueness to a rejected trial.
-  // Thus one shuffled pass proves every retained cage is indispensable.
-  const summary = { tested: order.length, total: order.length, removed: cages.length - remaining.length };
+  // Thus one shuffled pass proves every retained removal group is indispensable.
+  const summary = { tested, total: cages.length, removed: cages.length - remaining.length, paired };
   onProgress?.(summary);
   return { cages: remaining, ...summary };
 }
