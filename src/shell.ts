@@ -10,6 +10,7 @@ export const footer = `
   <p>Fill each row, column and 3 × 3 box with the digits 1–9, without repeating a digit.</p>
   <p>The digits inside each dashed cage must add up to the sum in its corner. No digit may repeat within a cage.</p>
   <p>Generate creates a completed grid and its cages. Rotational symmetry matches cage shapes after a half-turn; their sums may differ.</p>
+  <p>Optional cage digging removes cages while preserving a unique solution. Cells outside cages follow normal Sudoku rules; the remaining cage layout may no longer be symmetric.</p>
   <form method="dialog"><button autofocus>Close</button></form>
 </dialog>`;
 export function setupAbout() {

@@ -43,21 +43,23 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         </section>
       </section>
       <aside>
-        <section class="generate-panel"><h2>Generate a puzzle grid</h2><p>Every puzzle is verified to have one solution and a complete logical solve using cage combinations and Sudoku techniques.</p>
+        <section class="generate-panel"><h2>Generate a puzzle grid</h2><p>Every puzzle has a verified unique solution. Standard generation also guarantees a complete logical solve. Enable cage digging in Settings to remove cages while preserving uniqueness.</p>
           <p id="settings-error" class="error" role="alert" hidden></p>
           <p class="hint">Settings apply to the next generated grid.</p>
         </section>
         <section class="solver-panel" aria-labelledby="statistics-title"><h2 id="statistics-title">Puzzle statistics</h2>
           <p id="construction-time">Generate a puzzle to see construction time and technique counts.</p>
-          <p>Counts cover the complete verified solution. Rating is per use; score is rating × uses. Sudoku ratings follow the imported engine; both cage techniques rate 3. The puzzle level still reflects its hardest logical technique.</p>
+          <p>Counts cover the available logical walkthrough; a dug puzzle may require stronger techniques to finish. Rating is per use; score is rating × uses. Sudoku ratings follow the imported engine; both cage techniques rate 3. The reported level reflects the hardest technique in this walkthrough.</p>
           <table id="technique-tally" hidden><caption>Techniques used, easiest first</caption><thead><tr><th scope="col">Technique</th><th scope="col">Rating</th><th scope="col">Uses</th><th scope="col">Score</th></tr></thead><tbody></tbody><tfoot><tr><th scope="row" colspan="2">Total</th><td id="tally-total"></td><td id="tally-score"></td></tr></tfoot></table>
         </section>
 
       </aside>
     </div>
   </main>
-  <dialog id="settings-dialog" aria-labelledby="settings-title"><h2 id="settings-title">Settings</h2><p>Changes apply to the next generated puzzle. Any difficulty is accepted; every puzzle must still have a unique logical solution.</p>
+  <dialog id="settings-dialog" aria-labelledby="settings-title"><h2 id="settings-title">Settings</h2><p>Changes apply to the next generated puzzle. Any difficulty is accepted; every puzzle must still have a verified unique solution.</p>
           <fieldset id="settings"><legend>Generation settings</legend>
+<label class="symmetry-option"><input id="dig-cages" type="checkbox"> Dig cages after generation</label>
+<p class="setting-help">Try removing cages in random order, keeping each removal only if exactly one solution remains. Stop when no remaining cage can be removed. Cells outside cages follow normal Sudoku rules. Digging can break rotational symmetry and may leave an incomplete logical walkthrough.</p>
             <label class="symmetry-option"><input id="symmetry" type="checkbox" checked> Rotationally symmetric cages</label>
             <p class="setting-help">Cage shapes match after a 180° turn.</p>
             <fieldset class="size-options"><legend>Allowed cells per cage</legend>
@@ -90,6 +92,7 @@ function renderLinks() {
 }
 let generation = 0;
 let verifiedSteps = 0;
+let logicallySolved = true;
 let verifiedDifficulty: Difficulty = 'Easy';
 let hardestTechnique = '';
 let worker: Worker | null = null;
@@ -209,8 +212,8 @@ function renderWalkthrough() {
   historyList.replaceChildren();
   const current = history[walkthroughPosition - 1];
   solverMessage.textContent = current
-    ? 'Step ' + walkthroughPosition + ' of ' + history.length + ': ' + current.step.technique + '. ' + Array.from(solvingGrid.values).filter(Boolean).length + '/81 cells placed.' + (walkthroughPosition === history.length ? ' Puzzle solved using logic only.' : '')
-    : 'Ready. ' + verifiedDifficulty + ' · hardest technique: ' + hardestTechnique + '. Verified unique solution in ' + verifiedSteps + ' logical steps. Move the slider or choose Next step.';
+    ? 'Step ' + walkthroughPosition + ' of ' + history.length + ': ' + current.step.technique + '. ' + Array.from(solvingGrid.values).filter(Boolean).length + '/81 cells placed.' + (walkthroughPosition === history.length ? (logicallySolved ? ' Puzzle solved using logic only.' : ' Logical walkthrough exhausted. The unique solution is verified, but stronger techniques are needed to finish.') : '')
+    : 'Ready. ' + verifiedDifficulty + ' · hardest technique: ' + hardestTechnique + '. Verified unique solution. ' + verifiedSteps + (logicallySolved ? ' logical steps to completion.' : ' logical steps available; stronger techniques are needed to finish.') + ' Move the slider or choose Next step.';
   if (!current) return;
   historyList.start = walkthroughPosition;
   const item = document.createElement('li');
@@ -243,6 +246,7 @@ resetButton.addEventListener('click', () => seekWalkthrough(0));
 undoButton.addEventListener('click', () => seekWalkthrough(walkthroughPosition - 1));
 nextButton.addEventListener('click', () => seekWalkthrough(walkthroughPosition + 1));
 const options = (): PuzzleOptions => ({
+  dig: document.querySelector<HTMLInputElement>('#dig-cages')!.checked,
   symmetric: document.querySelector<HTMLInputElement>('#symmetry')!.checked,
   sizes: [...document.querySelectorAll<HTMLInputElement>('input[name="size"]:checked')].map(input => Number(input.value)),
 });
@@ -270,7 +274,7 @@ function renderBoard(values: number[], cages: Cage[]) {
   const beforeStep = currentStep ? (walkthroughPosition > 1 ? history[walkthroughPosition - 2].after : startSolver()) : undefined;
   const conflicts = manual ? manualStatus(manualBoard, cages).conflicts : new Set<number>();
   cells.forEach((cell, i) => {
-    const cage = cageForCell.get(i)!;
+    const cage = cageForCell.get(i);
     cell.replaceChildren();
     const digit = document.createElement('span');
     digit.className = 'cell-digit';
@@ -284,7 +288,7 @@ function renderBoard(values: number[], cages: Cage[]) {
     // Include peer candidates removed automatically when a digit is placed.
     const removed = beforeStep && !values[i] ? digitsOf(beforeStep.cands[i] & ~solvingGrid.cands[i]) : [];
     cell.append(digit);
-    cell.setAttribute('aria-label', `Row ${Math.floor(i / 9) + 1}, column ${i % 9 + 1}, ${values[i] || 'empty'}, cage sum ${cage.sum}, ${cage.cells.length} cells`);
+    cell.setAttribute('aria-label', `Row ${Math.floor(i / 9) + 1}, column ${i % 9 + 1}, ${values[i] || 'empty'}, ${cage ? `cage sum ${cage.sum}, ${cage.cells.length} cells` : 'no cage'}`);
     cell.classList.toggle('deduction-cell', !revealSolution && boardView === 'solver' && !!history[walkthroughPosition - 1]?.step.cells.includes(i));
     cell.classList.toggle('selected-cell', manual && selectedCell === i);
     cell.classList.toggle('conflict-cell', conflicts.has(i));
@@ -308,6 +312,7 @@ function renderBoard(values: number[], cages: Cage[]) {
       cell.setAttribute('aria-label', cell.getAttribute('aria-label') + (manual ? ', pencil marks ' : ', candidates ') + candidates.join(', '));
     }
     if (removed.length) cell.setAttribute('aria-label', cell.getAttribute('aria-label') + ', removed this step: ' + removed.join(', '));
+    if (!cage) return;
     const outline = document.createElement('span');
     outline.className = 'cage-outline';
     outline.setAttribute('aria-hidden', 'true');
@@ -358,14 +363,18 @@ button.addEventListener('click', () => {
   try {
     worker = new Worker(new URL('./engine/generation.worker.ts', import.meta.url), { type: 'module' });
     updateSolverControls();
-    worker.onmessage = (event: MessageEvent<Partial<VerifiedPuzzle> & { error?: string; progress?: number }>) => {
-      const { values, cages, error, progress, proofSteps, difficulty, hardestTechnique: hardest, deductions, techniqueTally, elapsedMilliseconds, attempts } = event.data;
+    worker.onmessage = (event: MessageEvent<Partial<VerifiedPuzzle> & { error?: string; progress?: number; diggingProgress?: { tested: number; total: number; removed: number } }>) => {
+      const { values, cages, error, progress, proofSteps, difficulty, hardestTechnique: hardest, deductions, techniqueTally, elapsedMilliseconds, attempts, digging, diggingProgress, logicallySolved: complete } = event.data;
+      if (diggingProgress) {
+        status.textContent = 'Digging: testing cage ' + Math.min(diggingProgress.tested + 1, diggingProgress.total) + ' of ' + diggingProgress.total + ' · ' + diggingProgress.removed + ' removed.';
+        return;
+      }
       if (progress !== undefined) {
         status.textContent = `Checking candidate ${progress}: verifying a unique solution and complete logical solve.`;
         return;
       }
-      if (error || !values || !cages || !proofSteps || !difficulty || !hardest || !deductions || deductions.length !== proofSteps || !techniqueTally || elapsedMilliseconds === undefined) { fail(error ?? 'Unable to verify the puzzle. Try again.'); return; }
-      document.querySelector('#construction-time')!.textContent = 'Constructed and logically verified in ' + (elapsedMilliseconds / 1000).toFixed(2) + ' seconds · ' + attempts + ' candidate puzzles checked.';
+      if (error || !values || !cages || proofSteps === undefined || complete === undefined || !difficulty || !hardest || !deductions || deductions.length !== proofSteps || !techniqueTally || elapsedMilliseconds === undefined) { fail(error ?? 'Unable to verify the puzzle. Try again.'); return; }
+      document.querySelector('#construction-time')!.textContent = 'Constructed and verified in ' + (elapsedMilliseconds / 1000).toFixed(2) + ' seconds · ' + attempts + ' candidate puzzles checked.' + (digging ? ` ${digging.removed} of ${digging.total} cages removed; ${cages.length} remain. Every remaining cage is necessary for uniqueness.` : '');
       const tally = document.querySelector<HTMLTableElement>('#technique-tally')!;
       tally.hidden = false;
       const body = tally.tBodies[0]; body.replaceChildren();
@@ -378,6 +387,7 @@ button.addEventListener('click', () => {
       }
       document.querySelector('#tally-total')!.textContent = String(proofSteps);
       document.querySelector('#tally-score')!.textContent = String(scores.reduce((sum, row) => sum + row.score, 0));
+      logicallySolved = complete;
       verifiedSteps = proofSteps;
       verifiedDifficulty = difficulty; hardestTechnique = hardest;
       solution = values; activeCages = cages; resetSolving(deductions); revealSolution = false; candidateToggle.checked = false;
@@ -385,8 +395,9 @@ button.addEventListener('click', () => {
       updateManualMessage();
       paint();
       generation++;
-      document.querySelector('#badge')!.textContent = `${difficulty.toUpperCase()} · ${cages.length} CAGES`;
-      status.textContent = `Puzzle ${generation} · ${difficulty} · hardest: ${hardest} · unique solution · ${proofSteps} logical steps verified.`;
+      document.querySelector('#board-title')!.textContent = digging ? 'Dug-killer grid' : 'Your grid';
+      document.querySelector('#badge')!.textContent = `${digging ? 'DUG-KILLER' : difficulty.toUpperCase()} · ${cages.length} CAGES`;
+      status.textContent = `Puzzle ${generation} · ${difficulty} · hardest: ${hardest} · unique solution · ${proofSteps} logical steps verified.${complete ? '' : ' Walkthrough is partial; stronger techniques are needed.'}`;
       cleanup();
     };
     worker.onerror = () => fail('Unable to generate a grid. Please reload and try again.');

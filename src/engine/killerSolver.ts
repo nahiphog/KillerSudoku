@@ -66,9 +66,9 @@ export function cageSupports(grid: Grid, cage: Cage): { combinations: number[][]
 }
 
 export function nextKillerStep(grid: Grid, cages: Cage[]): SolverResult {
-  if (cages.flatMap(c => c.cells).length !== 81 || new Set(cages.flatMap(c => c.cells)).size !== 81
+  if (new Set(cages.flatMap(c => c.cells)).size !== cages.flatMap(c => c.cells).length
     || cages.some(c => c.cells.some(i => !Number.isInteger(i) || i < 0 || i >= 81))) {
-    return { status: 'contradiction', message: 'Cages must cover all 81 cells exactly once.' };
+    return { status: 'contradiction', message: 'Cages must use valid cells without overlapping.' };
   }
   if (isBroken(grid) || UNITS.some(unit => {
     const values = unit.map(i => grid.values[i]).filter(Boolean);
