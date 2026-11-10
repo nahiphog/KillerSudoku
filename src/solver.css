@@ -85,7 +85,7 @@
 /* The generator uses the entire content width; statistics follow the walkthrough. */
 .generation-workspace { display: flex; flex-direction: column; gap: 24px; }
 .generation-workspace > .board-panel { width: 100%; }
-.generation-workspace .grid-frame { width: 100%; }
+.generation-workspace .grid-frame { width: 70%; }
 .generation-workspace .board-stage { position: static; box-shadow: none; }
 .generation-workspace .cell-digit { font-size: clamp(24px, 4cqw, 48px); }
 .generation-workspace .cell-candidates { font-size: clamp(10px, 1.7cqw, 19px); }

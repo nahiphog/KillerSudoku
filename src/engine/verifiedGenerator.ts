@@ -7,7 +7,7 @@ import { applyDeduction, nextKillerStep, startSolver, type Deduction } from './k
 import { techniqueDifficulty, techniqueRank, type Difficulty } from './difficulty';
 
 export interface LogicalProof { values: number[]; complete: boolean; steps: number; difficulty: Difficulty; hardestTechnique: string; deductions: Deduction[]; techniqueTally: Record<string, number> }
-export type PuzzleOptions = CageOptions & { dig?: boolean; digPairs?: boolean };
+export type PuzzleOptions = CageOptions & { dig?: boolean; digPairs?: boolean; logicOnly?: boolean };
 
 /** Logical traces prove uniqueness when complete without search. Optional
  * search fallback is reserved for walkthroughs of already verified puzzles;
@@ -86,7 +86,7 @@ export function generateVerifiedPuzzle(options: PuzzleOptions, limits: Generatio
       const result = digCages(cages, random, digDeadline, limits.onDigProgress, Array.from(grid.values), (options.digPairs ?? true) && options.symmetric !== false);
       cages = result.cages;
       digging = { tested: result.tested, total: result.total, removed: result.removed, paired: result.paired };
-      proof = traceLogically(cages, digDeadline, true);
+      proof = traceLogically(cages, digDeadline, options.logicOnly === false);
       if (!proof) throw new Error('Unable to finish the dug puzzle walkthrough within the time limit. Try again.');
     }
     return { logicallySolved: proof.complete && !proof.techniqueTally['Brute Force'], digging, values: Array.from(grid.values), cages, proofSteps: proof.steps, attempts: attempt, difficulty: proof.difficulty, hardestTechnique: proof.hardestTechnique, deductions: proof.deductions, techniqueTally: proof.techniqueTally, elapsedMilliseconds: performance.now() - started };

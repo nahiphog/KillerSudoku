@@ -13,7 +13,7 @@ import { scoredTally } from './engine/techniqueScores';
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   ${header.replace('<button id="about"', '<button id="open-settings" type="button" aria-haspopup="dialog">Settings</button><button id="about"')}
-  <div class="generation-toolbar"><div class="generation-actions"><button id="generate" type="button">↻ Generate</button><label class="symmetry-option"><input id="dig-cages" type="checkbox" checked> Dig cages after generation</label><label class="symmetry-option"><input id="dig-pairs" type="checkbox" checked> Dig cages in pairs</label><p>Cage options are available in Settings.</p></div><p id="generation-live" role="timer" hidden></p><dl id="generation-summary" aria-label="Generated puzzle details" hidden></dl></div>
+  <div class="generation-toolbar"><div class="generation-actions"><button id="generate" type="button">↻ Generate</button><label class="symmetry-option"><input id="dig-cages" type="checkbox" checked> Dig cages after generation</label><label class="symmetry-option"><input id="dig-pairs" type="checkbox" checked> Dig cages in pairs</label><label class="symmetry-option"><input id="logic-only" type="checkbox" checked title="Applies to the next generated puzzle. Stops when logical techniques are exhausted."> Logic-only walkthrough</label><p>Cage options are available in Settings.</p></div><p id="generation-live" role="timer" hidden></p><dl id="generation-summary" aria-label="Generated puzzle details" hidden></dl></div>
   <main>
     <div class="workspace generation-workspace">
       <section class="board-panel" aria-labelledby="board-title">
@@ -65,6 +65,7 @@ const button = document.querySelector<HTMLButtonElement>('#generate')!;
 const pairToggle = document.querySelector<HTMLInputElement>('#dig-pairs')!;
 const settings = document.querySelector<HTMLFieldSetElement>('#settings')!;
 const digToggle = document.querySelector<HTMLInputElement>('#dig-cages')!;
+const logicOnlyToggle = document.querySelector<HTMLInputElement>('#logic-only')!;
 const status = document.querySelector('#status')!;
 const liveTimer = generationTimer(document.querySelector<HTMLElement>('#generation-live')!);
 const errorText = document.querySelector<HTMLParagraphElement>('#settings-error')!;
@@ -97,6 +98,7 @@ const historyList = document.querySelector<HTMLOListElement>('#step-history')!;
 function updateSolverControls() {
   const busy = !!worker;
   digToggle.disabled = busy;
+  logicOnlyToggle.disabled = busy;
   pairToggle.disabled = busy || !digToggle.checked || !document.querySelector<HTMLInputElement>('#symmetry')!.checked;
   button.textContent = busy ? 'Cancel generation' : '↻ Generate';
   if (busy) button.disabled = false;
@@ -132,8 +134,10 @@ function resetSolving(deductions: Deduction[]) {
 function renderWalkthrough() {
   historyList.replaceChildren();
   const current = history[walkthroughPosition - 1];
-  document.querySelector<HTMLElement>('#deduction-panel')!.hidden = !current;
+  const stalled = !!solution && walkthroughPosition === history.length && Array.from(solvingGrid.values).some(value => !value);
+  document.querySelector<HTMLElement>('#deduction-panel')!.hidden = !current && !stalled;
   solverMessage.textContent = current ? 'Step ' + walkthroughPosition + ' of ' + history.length + ' · ' + Array.from(solvingGrid.values).filter(Boolean).length + '/81 cells placed.' : '';
+  if (stalled) solverMessage.textContent += ' No further logical steps are available. The puzzle still has a verified unique solution.';
   if (!current) return;
   historyList.start = walkthroughPosition;
   const item = document.createElement('li');
@@ -167,6 +171,7 @@ undoButton.addEventListener('click', () => seekWalkthrough(walkthroughPosition -
 nextButton.addEventListener('click', () => seekWalkthrough(walkthroughPosition + 1));
 const options = (): PuzzleOptions => ({
   dig: digToggle.checked,
+  logicOnly: logicOnlyToggle.checked,
   digPairs: pairToggle.checked,
   symmetric: document.querySelector<HTMLInputElement>('#symmetry')!.checked,
   sizes: [...document.querySelectorAll<HTMLInputElement>('input[name="size"]:checked')].map(input => Number(input.value)),
@@ -337,7 +342,7 @@ function acceptPuzzle(puzzle: VerifiedPuzzle, custom = false) {
   generation++;
   document.querySelector('#board-title')!.textContent = custom ? 'Custom grid' : digging ? 'Dug-killer grid' : 'Your grid';
   document.querySelector('#badge')!.textContent = `${custom ? 'CUSTOM' : digging ? 'DUG-KILLER' : difficulty.toUpperCase()} · ${cages.length} CAGES`;
-  status.textContent = `Puzzle ${generation} · ${difficulty} · hardest: ${hardest} · unique solution · ${proofSteps} walkthrough steps${techniqueTally['Brute Force'] ? ' · Brute Force uses: ' + techniqueTally['Brute Force'] : ''}.`;
+  status.textContent = `Puzzle ${generation} · ${difficulty} · hardest: ${hardest} · unique solution · ${proofSteps} walkthrough steps${techniqueTally['Brute Force'] ? ' · Brute Force uses: ' + techniqueTally['Brute Force'] : !complete ? ' · partial logical walkthrough' : ''}.`;
 }
 
 if (new URLSearchParams(location.search).get('custom') === '1') {

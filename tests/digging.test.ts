@@ -20,7 +20,7 @@ describe('exact cage digging', () => {
   });
   it.each([1, 2])('produces a unique irreducible dug puzzle from seed %i', seed => {
     const progress: number[] = [];
-    const puzzle = generateVerifiedPuzzle({dig:true, digPairs:false}, {random:rng(seed), maxDigMilliseconds:120000, onDigProgress:p=>progress.push(p.tested)});
+    const puzzle = generateVerifiedPuzzle({dig:true, digPairs:false, logicOnly:false}, {random:rng(seed), maxDigMilliseconds:120000, onDigProgress:p=>progress.push(p.tested)});
     expect(puzzle.digging!.removed).toBeGreaterThan(0);
     expect(puzzle.digging!.tested).toBe(puzzle.digging!.total);
     expect(puzzle.cages.length + puzzle.digging!.removed).toBe(puzzle.digging!.total);
@@ -59,6 +59,11 @@ describe('exact cage digging', () => {
  it('defaults to pair digging and preserves symmetry and pair irreducibility', () => {
    const puzzle = generateVerifiedPuzzle({dig:true}, {random:rng(3),maxDigMilliseconds:120000});
    expect(puzzle.digging?.paired).toBe(true);
+   expect(puzzle.techniqueTally['Brute Force']).toBeUndefined();
+   expect(puzzle.deductions.every(step=>step.technique !== 'Brute Force')).toBe(true);
+   let replay = startSolver();
+   for(const step of puzzle.deductions) replay = applyDeduction(replay,puzzle.cages,step);
+   expect(nextKillerStep(replay,puzzle.cages).status).toBe(puzzle.logicallySolved ? 'solved' : 'stalled');
    expect(puzzle.digging!.removed).toBeGreaterThan(0);
    expect(countKillerSolutions(puzzle.cages,Date.now()+120000,puzzle.values)).toBe(1);
    for(const group of cageDigGroups(puzzle.cages,true)) {
