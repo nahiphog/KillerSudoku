@@ -32,15 +32,21 @@ export function visibleGrid(board: HTMLElement, cages: Cage[] | ExportGrid['cage
   };
 }
 
-/** Draw only the board, with the currently displayed digits and candidate colors. */
+/** Snapshot the visible board and legend, including the current walkthrough colors. */
 export function gridImage(board: HTMLElement): Promise<Blob> {
   const bounds = board.getBoundingClientRect();
+  const legend = [...board.closest('.board-panel')?.querySelectorAll<HTMLElement>('.cage-legend > span') ?? []].map(item => ({
+    text: item.textContent?.trim() ?? '',
+    color: getComputedStyle(item.querySelector('i')!).borderTopColor,
+    textColor: getComputedStyle(item).color,
+  }));
+  const legendHeight = legend.length ? 24 + legend.length * 20 : 0;
   const canvas = document.createElement('canvas');
   const scale = 1440 / bounds.width;
-  canvas.width = 1440; canvas.height = Math.ceil(bounds.height * scale);
+  canvas.width = 1440; canvas.height = Math.ceil((bounds.height + legendHeight) * scale);
   const ctx = canvas.getContext('2d');
   if (!ctx) return Promise.reject(new Error('Image export is unavailable.'));
-  ctx.scale(scale,scale); ctx.fillStyle = '#fff'; ctx.fillRect(0,0,bounds.width,bounds.height);
+  ctx.scale(scale,scale); ctx.fillStyle = '#fff'; ctx.fillRect(0,0,bounds.width,bounds.height + legendHeight);
   const rect = (element: Element) => {
     const r = element.getBoundingClientRect();
     return {x:r.left-bounds.left,y:r.top-bounds.top,w:r.width,h:r.height};
@@ -86,6 +92,20 @@ export function gridImage(board: HTMLElement): Promise<Blob> {
   }
   ctx.setLineDash([]);
   borders(board);
+  // A compact, centered footer fits even when the on-page legend wraps.
+  ctx.font="400 11px 'DM Sans', sans-serif";
+  const textWidth = Math.max(0,...legend.map(item=>ctx.measureText(item.text).width));
+  const fontSize = Math.min(11,11 * (bounds.width - 56) / Math.max(1,textWidth));
+  ctx.font=`400 ${fontSize}px 'DM Sans', sans-serif`;
+  const legendWidth = Math.max(0,...legend.map(item=>ctx.measureText(item.text).width)) + 24;
+  const legendLeft = (bounds.width - legendWidth) / 2;
+  ctx.textAlign='left';ctx.textBaseline='middle';
+  legend.forEach((item,index)=>{
+    const y=bounds.height + 22 + index * 20;
+    ctx.strokeStyle=item.color;ctx.lineWidth=2;ctx.setLineDash([3,3]);
+    ctx.beginPath();ctx.moveTo(legendLeft,y);ctx.lineTo(legendLeft+16,y);ctx.stroke();
+    ctx.setLineDash([]);ctx.fillStyle=item.textColor;ctx.fillText(item.text,legendLeft+24,y);
+  });
   return new Promise((resolve,reject)=>canvas.toBlob(blob=>blob ? resolve(blob) : reject(new Error('Unable to create image.')),'image/png'));
 }
 
