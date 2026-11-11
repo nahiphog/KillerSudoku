@@ -5,6 +5,7 @@ import { header, footer, setupAbout } from './shell';
 import { HISTOGRAM_EDGES, TRIAL_COUNTS, RATING_THRESHOLDS, histogramBin, matchesSimulation, type SimulationResult, type SimulationRecord } from './engine/simulation';
 import { simulationStore } from './simulationStore';
 import { serializeGrid } from './gridExport';
+import { simulationWalkthroughUrl } from './simulationWalkthrough';
 import { cageOptionsError, DEFAULT_CAGE_SIZES, type CageOperation } from './engine/cages';
 import { retainedCageSizesError, type PuzzleOptions } from './engine/verifiedGenerator';
 
@@ -98,6 +99,10 @@ function card(record: SimulationRecord) {
     }
   }
   article.append(board);
+  const walkthrough=document.createElement('a');walkthrough.className='simulation-walkthrough';
+  walkthrough.textContent='Open solution walkthrough';walkthrough.href=simulationWalkthroughUrl(record);
+  walkthrough.target='_blank';walkthrough.rel='noopener';walkthrough.setAttribute('aria-label',`Open solution walkthrough for trial ${record.trial} (new tab)`);
+  article.append(walkthrough);
   const copy=document.createElement('button');copy.textContent='Copy grid string';
   const fallback=document.createElement('textarea');fallback.hidden=true;fallback.readOnly=true;fallback.setAttribute('aria-label','Grid string');
   copy.addEventListener('click',async()=>{

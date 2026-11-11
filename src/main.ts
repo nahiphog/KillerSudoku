@@ -12,6 +12,7 @@ import { cellName, digitsOf, type Grid } from './vendor/sudokui/board';
 import './solver.css';
 import { drawWalkthroughLinks } from './walkthroughLinks';
 import { scoredTally } from './engine/techniqueScores';
+import { readSimulationWalkthrough } from './simulationWalkthrough';
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   ${header.replace('<button id="about"', '<button id="open-settings" type="button" aria-haspopup="dialog">Settings</button><button id="about"')}
@@ -79,6 +80,7 @@ function renderLinks() {
 }
 let generation = 0;
 let worker: Worker | null = null;
+let loadingSimulation = false;
 let solution: number[] | null = null;
 let editablePuzzle: VerifiedPuzzle | null = null;
 let activeCages: Cage[] = [];
@@ -111,7 +113,7 @@ function updateSolverControls() {
   retainedCageSizes.disabled = busy;
   logicOnlyToggle.disabled = busy;
   pairToggle.disabled = busy || !digToggle.checked || !document.querySelector<HTMLInputElement>('#symmetry')!.checked;
-  button.textContent = busy ? 'Cancel generation' : '↻ Generate';
+  button.textContent = busy ? loadingSimulation ? 'Cancel walkthrough' : 'Cancel generation' : '↻ Generate';
   if (busy) button.disabled = false;
   toggleSolution.disabled = !solution || busy;
   candidateToggle.disabled = !solution || busy || revealSolution;
@@ -206,7 +208,8 @@ function cancelGeneration() {
   liveTimer.stop();
   worker?.terminate(); worker = null;
   settings.disabled = false;
-  status.textContent = 'Generation cancelled. Your previous puzzle is unchanged.';
+  status.textContent = loadingSimulation ? 'Walkthrough loading cancelled.' : 'Generation cancelled. Your previous puzzle is unchanged.';
+  loadingSimulation = false;
   validate(); updateSolverControls();
 }
 settings.addEventListener('change', validate);
@@ -392,3 +395,29 @@ document.querySelector('#edit-custom')!.addEventListener('click',()=>{
     location.href='./custom.html?edit=1';
   } catch {status.textContent='Browser storage is unavailable. Enable session storage to edit this grid.';}
 });
+
+function loadSimulationWalkthrough() {
+  const finish = () => {worker?.terminate();worker=null;loadingSimulation=false;settings.disabled=false;validate();updateSolverControls();};
+  const fail = (message: string) => {finish();status.textContent=message;errorText.textContent=message;errorText.hidden=false;};
+  try {
+    const request=readSimulationWalkthrough(location.hash);
+    if(!request)return;
+    loadingSimulation=true;settings.disabled=true;
+    status.textContent=`Preparing solution walkthrough for simulation trial ${request.trial}…`;
+    worker=new Worker(new URL('./engine/import.worker.ts',import.meta.url),{type:'module'});
+    updateSolverControls();
+    worker.onmessage=(event:MessageEvent<{puzzle?:VerifiedPuzzle;error?:string}>)=>{
+      const puzzle=event.data.puzzle;
+      if(!puzzle){fail(event.data.error ?? 'Unable to prepare this simulation walkthrough.');return;}
+      finish();
+      acceptPuzzle({...puzzle,elapsedMilliseconds:request.elapsedMilliseconds},true);
+      document.querySelector('#board-title')!.textContent=`Simulation trial ${request.trial}`;
+      document.querySelector('#badge')!.textContent=`SIMULATION · ${puzzle.cages.length} CAGES`;
+      status.textContent=`Simulation trial ${request.trial} · verified unique solution · ${puzzle.proofSteps} walkthrough steps${puzzle.techniqueTally['Brute Force'] ? ' · Brute Force uses: '+puzzle.techniqueTally['Brute Force'] : ''}.`;
+      document.querySelector('#board-title')!.scrollIntoView({block:'start'});
+    };
+    worker.onerror=()=>fail('Unable to prepare this simulation walkthrough. Reload to try again.');
+    worker.postMessage(request.grid);
+  }catch(error){fail(error instanceof Error ? error.message : 'Invalid simulation grid link.');}
+}
+loadSimulationWalkthrough();

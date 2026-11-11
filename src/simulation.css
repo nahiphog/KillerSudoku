@@ -27,3 +27,6 @@
 .simulation-card .board tbody, .simulation-card .board tr { display: contents; }
 .simulation-card .board td { width: auto; min-width: 0; aspect-ratio: 1; }
 .simulation-card > button { width: auto; padding: 10px 14px; }
+.simulation-walkthrough { display: inline-flex; margin-top: 18px; padding: 10px 14px; border-radius: 7px; background: #2f503d; color: white; text-decoration: none; font-size: 14px; font-weight: 600; }
+.simulation-walkthrough:hover { background: #223d2d; }
+.simulation-walkthrough:focus-visible { outline: 3px solid #a0b86e; outline-offset: 4px; }
