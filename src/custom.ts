@@ -79,7 +79,10 @@ function render() {
     cell.append(outline);
     if (i === Math.min(...groups[owner])) {
       const label = document.createElement('span'); label.className = 'cage-sum';
-      label.textContent = puzzle ? String(puzzle.cages[owner].sum) : sums[owner] != null ? String(sums[owner]) : `C${owner + 1}`; if(operations[owner]==='product') {label.textContent+='×';if((sums[owner] ?? 0)>=10000) label.style.fontSize='10px';} cell.append(label);
+      label.textContent = puzzle ? String(puzzle.cages[owner].sum) : sums[owner] != null ? String(sums[owner]) : `C${owner + 1}`;
+      label.textContent += operations[owner] === 'product' ? '×' : '+';
+      if (operations[owner] === 'product' && (sums[owner] ?? 0) >= 10000) label.style.fontSize = '10px';
+      cell.append(label);
     }
   });
   element('coverage').textContent = `${owners.size}/81 CELLS IN CAGES`;

@@ -270,7 +270,7 @@ function renderBoard(values: number[], cages: Cage[]) {
     if (cage.cells[0] === i) {
       const label = document.createElement('span');
       label.className = 'cage-sum';
-      label.textContent = String(cage.sum) + (cage.operation === 'product' ? '×' : '');
+      label.textContent = String(cage.sum) + (cage.operation === 'product' ? '×' : '+');
       if(cage.operation === 'product' && cage.sum>=10000) label.style.fontSize='10px';
       label.setAttribute('aria-hidden', 'true');
       cell.append(label);
