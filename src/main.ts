@@ -3,7 +3,7 @@ import { customEntryGrid } from './engine/customEntries';
 import './style.css';
 import './cages.css';
 import { cageOptionsError, DEFAULT_CAGE_SIZES, type Cage } from './engine/cages';
-import { minimumCageSizeError, type PuzzleOptions, type VerifiedPuzzle } from './engine/verifiedGenerator';
+import { retainedCageSizesError, type PuzzleOptions, type VerifiedPuzzle } from './engine/verifiedGenerator';
 import { header, footer, setupAbout } from './shell';
 import { applyDeduction, startSolver, type Deduction } from './engine/killerSolver';
 import { cellName, digitsOf, type Grid } from './vendor/sudokui/board';
@@ -13,7 +13,7 @@ import { scoredTally } from './engine/techniqueScores';
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   ${header.replace('<button id="about"', '<button id="open-settings" type="button" aria-haspopup="dialog">Settings</button><button id="about"')}
-  <div class="generation-toolbar"><div class="generation-actions"><button id="generate" type="button">↻ Generate</button><label class="symmetry-option"><input id="dig-cages" type="checkbox" checked> Dig cages after generation</label><label class="symmetry-option"><input id="dig-pairs" type="checkbox" checked> Dig cages in pairs</label><label class="symmetry-option"><input id="logic-only" type="checkbox" checked title="Applies to the next generated puzzle. Every cell must be solvable with logical techniques; digging must preserve this complete solve."> Require a complete logical solve</label><label class="symmetry-option">Keep at least one cage with <select id="minimum-cage-size" aria-label="Minimum size of a retained cage"><option value="0">No minimum</option>${Array.from({length: 10}, (_, i) => `<option value="${i+2}" ${i+2 > 9 ? 'disabled' : ''}>${i+2}+ cells${i+2 > 9 ? ' (impossible: no repeated digits)' : ''}</option>`).join('')}</select></label><p>Cage options are available in Settings.</p></div><p id="generation-live" role="timer" hidden></p><dl id="generation-summary" aria-label="Generated puzzle details" hidden></dl></div>
+  <div class="generation-toolbar"><div class="generation-actions"><button id="generate" type="button">↻ Generate</button><label class="symmetry-option"><input id="dig-cages" type="checkbox" checked> Dig cages after generation</label><label class="symmetry-option"><input id="dig-pairs" type="checkbox" checked> Dig cages in pairs</label><label class="symmetry-option"><input id="logic-only" type="checkbox" checked title="Applies to the next generated puzzle. Every cell must be solvable with logical techniques; digging must preserve this complete solve."> Require a complete logical solve</label><fieldset id="retained-cage-sizes"><legend>Retain at least one cage of each selected size</legend>${Array.from({length:8},(_,i)=>`<label><input type="checkbox" name="retained-size" value="${i+2}"> ${i+2} cells</label>`).join('')}</fieldset><p>Cage options are available in Settings.</p></div><p id="generation-live" role="timer" hidden></p><dl id="generation-summary" aria-label="Generated puzzle details" hidden></dl></div>
   <main>
     <div class="workspace generation-workspace">
       <section class="board-panel" aria-labelledby="board-title">
@@ -62,7 +62,7 @@ settingsDialog.addEventListener('click', event => {
   if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) settingsDialog.close();
 });
 const button = document.querySelector<HTMLButtonElement>('#generate')!;
-const minimumCageSize = document.querySelector<HTMLSelectElement>('#minimum-cage-size')!;
+const retainedCageSizes = document.querySelector<HTMLFieldSetElement>('#retained-cage-sizes')!;
 const pairToggle = document.querySelector<HTMLInputElement>('#dig-pairs')!;
 const settings = document.querySelector<HTMLFieldSetElement>('#settings')!;
 const digToggle = document.querySelector<HTMLInputElement>('#dig-cages')!;
@@ -99,7 +99,7 @@ const historyList = document.querySelector<HTMLOListElement>('#step-history')!;
 function updateSolverControls() {
   const busy = !!worker;
   digToggle.disabled = busy;
-  minimumCageSize.disabled = busy || !digToggle.checked;
+  retainedCageSizes.disabled = busy || !digToggle.checked;
   logicOnlyToggle.disabled = busy;
   pairToggle.disabled = busy || !digToggle.checked || !document.querySelector<HTMLInputElement>('#symmetry')!.checked;
   button.textContent = busy ? 'Cancel generation' : '↻ Generate';
@@ -173,7 +173,7 @@ undoButton.addEventListener('click', () => seekWalkthrough(walkthroughPosition -
 nextButton.addEventListener('click', () => seekWalkthrough(walkthroughPosition + 1));
 const options = (): PuzzleOptions => ({
   dig: digToggle.checked,
-  minimumCageSize: Number(minimumCageSize.value),
+  retainedCageSizes: [...document.querySelectorAll<HTMLInputElement>('input[name="retained-size"]:checked')].map(input => Number(input.value)),
   logicOnly: logicOnlyToggle.checked,
   digPairs: pairToggle.checked,
   symmetric: document.querySelector<HTMLInputElement>('#symmetry')!.checked,
@@ -181,7 +181,7 @@ const options = (): PuzzleOptions => ({
 });
 function validate() {
   const selected = options();
-  const error = cageOptionsError(selected) ?? minimumCageSizeError(selected) ?? (selected.sizes?.every(size => size === 9)
+  const error = cageOptionsError(selected) ?? retainedCageSizesError(selected) ?? (selected.sizes?.every(size => size === 9)
     ? 'Nine-cell cages all sum to 45 and cannot give a unique puzzle. Allow smaller cage sizes.' : null);
   errorText.textContent = error ?? '';
   errorText.hidden = !error;
@@ -199,7 +199,7 @@ function cancelGeneration() {
 }
 settings.addEventListener('change', validate);
 digToggle.addEventListener('change', validate);
-minimumCageSize.addEventListener('change', validate);
+retainedCageSizes.addEventListener('change', validate);
 function renderBoard(values: number[], cages: Cage[]) {
   const cageForCell = new Map(cages.flatMap(cage => cage.cells.map(cell => [cell, cage] as const)));
   const currentStep = !revealSolution ? history[walkthroughPosition - 1]?.step : undefined;

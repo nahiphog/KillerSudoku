@@ -12,11 +12,19 @@ describe('custom cage construction', () => {
     }
     expect(customLayoutError([[0, 1, 10], [80]])).toBeNull();
   });
+  it('rejects cages overlapping tagged cells and invalid tags', () => {
+    expect(customLayoutError([[0,1]],[1])).toContain('Tagged');
+    expect(()=>generateCustomPuzzle([[0,1]],{},undefined,[1])).toThrow('Tagged');
+    expect(()=>generateCustomPuzzle([[0,1]],{},undefined,[81])).toThrow('Invalid');
+    expect(customLayoutError([[0,1]],[2,3])).toBeNull();
+  });
   it('preserves the exact layout and verifies uniqueness from no given digits', () => {
     // Include a cage crossing a box boundary and allow uncovered cells.
     const groups = [[2, 3, 12], ...Array.from({ length: 81 }, (_, i) => i).filter(i => ![2, 3, 12, 80].includes(i)).map(i => [i])];
     const snapshot = JSON.stringify(groups);
-    const puzzle = generateCustomPuzzle(groups, { random: rng(7), maxAttempts: 10 });
+    const puzzle = generateCustomPuzzle(groups, { random: rng(7), maxAttempts: 10 }, undefined, [80]);
+    expect(puzzle.cageFreeCells).toEqual([80]);
+    expect(puzzle.cages.every(cage=>!cage.cells.includes(80))).toBe(true);
     expect(JSON.stringify(groups)).toBe(snapshot);
     expect(puzzle.cages.map(c => c.cells)).toEqual(groups);
     for (const unit of UNITS) expect(new Set(unit.map(i => puzzle.values[i])).size).toBe(9);

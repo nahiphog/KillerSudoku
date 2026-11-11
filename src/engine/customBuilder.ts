@@ -5,7 +5,15 @@ import { orthogonalNeighbors, type Cage } from './cages';
 import { countKillerSolutions } from './digging';
 import { traceLogically, type GenerationLimits, type VerifiedPuzzle } from './verifiedGenerator';
 
-export function customLayoutError(groups: number[][]): string | null {
+export function cageFreeCellsError(groups: number[][], cageFreeCells: readonly number[]): string | null {
+  if(cageFreeCells.some(cell => !Number.isInteger(cell) || cell < 0 || cell > 80)) return 'Invalid cage-free cell.';
+  if(groups.some(group => group.some(cell => cageFreeCells.includes(cell)))) return 'Tagged cage-free cells cannot belong to a cage. Remove the cage or untag the cell first.';
+  return null;
+}
+
+export function customLayoutError(groups: number[][], cageFreeCells: readonly number[] = []): string | null {
+  const blockedError = cageFreeCellsError(groups, cageFreeCells);
+  if(blockedError) return blockedError;
   if (!groups.length) return 'Add at least one cage.';
   const occupied = new Set<number>();
   for (const cells of groups) {
@@ -56,9 +64,9 @@ function fillLayout(groups: number[][], random: () => number, deadline: number, 
   return fill(cloneGrid(initial));
 }
 
-export function generateCustomPuzzle(groups: number[][], limits: GenerationLimits = {}, entries?: ManualBoard): VerifiedPuzzle {
+export function generateCustomPuzzle(groups: number[][], limits: GenerationLimits = {}, entries?: ManualBoard, cageFreeCells: readonly number[] = []): VerifiedPuzzle {
   const hasEntries = entries?.values.some(Boolean) || entries?.notes.some(Boolean);
-  const error = groups.length || !hasEntries ? customLayoutError(groups) : null;
+  const error = cageFreeCellsError(groups, cageFreeCells) ?? (groups.length || !hasEntries ? customLayoutError(groups) : null);
   if (error) throw new Error(error);
   if (!hasEntries && groups.every(group => group.length === 9)) throw new Error('Nine-cell cages always sum to 45. This layout cannot specify a unique solution. Add smaller cages.');
   const initial = customEntryGrid(entries, groups);
@@ -76,7 +84,7 @@ export function generateCustomPuzzle(groups: number[][], limits: GenerationLimit
     catch { continue; }
     if (count !== 1) continue;
     const proof = traceLogically(cages, deadline, true, initial);
-    return { values, cages, entries: entries ? { values: [...entries.values], notes: [...entries.notes] } : undefined, attempts: attempt, logicallySolved: !!proof?.complete && !proof.techniqueTally['Brute Force'],
+    return { values, cages, cageFreeCells: [...new Set(cageFreeCells)], entries: entries ? { values: [...entries.values], notes: [...entries.notes] } : undefined, attempts: attempt, logicallySolved: !!proof?.complete && !proof.techniqueTally['Brute Force'],
       deductions: proof?.deductions ?? [], techniqueTally: proof?.techniqueTally ?? {},
       proofSteps: proof?.steps ?? 0, difficulty: proof?.difficulty ?? 'Easy',
       hardestTechnique: proof?.hardestTechnique ?? 'Not rated', elapsedMilliseconds: performance.now() - started };

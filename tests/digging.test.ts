@@ -1,22 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import { countKillerSolutions, digCages, cageDigGroups } from '../src/engine/digging';
-import { generateVerifiedPuzzle, proveLogically, minimumCageSizeError } from '../src/engine/verifiedGenerator';
+import { generateVerifiedPuzzle, proveLogically, retainedCageSizesError } from '../src/engine/verifiedGenerator';
 import { applyDeduction, nextKillerStep, startSolver } from '../src/engine/killerSolver';
 import { UNITS } from '../src/vendor/sudokui/board';
 const rng = (seed: number) => () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
 
 describe('exact cage digging', () => {
   it('validates the retained cage minimum against digits and allowed sizes', () => {
-    expect(minimumCageSizeError({dig:true, minimumCageSize:10})).toContain('cannot contain');
-    expect(minimumCageSizeError({dig:true, minimumCageSize:11})).toContain('cannot contain');
-    expect(minimumCageSizeError({dig:true, minimumCageSize:8})).toContain('Settings');
-    expect(minimumCageSizeError({dig:false, minimumCageSize:8})).toBeNull();
-    expect(minimumCageSizeError({dig:true, minimumCageSize:8, sizes:[2,3,8]})).toBeNull();
-    expect(()=>generateVerifiedPuzzle({dig:true, minimumCageSize:10})).toThrow('cannot contain');
+    expect(retainedCageSizesError({dig:true, retainedCageSizes:[10]})).toContain('between 2 and 9');
+    expect(retainedCageSizesError({dig:true, retainedCageSizes:[11]})).toContain('between 2 and 9');
+    expect(retainedCageSizesError({dig:true, retainedCageSizes:[8]})).toContain('Settings');
+    expect(retainedCageSizesError({dig:false, retainedCageSizes:[8]})).toBeNull();
+    expect(retainedCageSizesError({dig:true, retainedCageSizes:[8], sizes:[2,3,8]})).toBeNull();
+    expect(retainedCageSizesError({dig:true, retainedCageSizes:[4], sizes:[2,3,5]})).toContain('Settings');
+    expect(()=>generateVerifiedPuzzle({dig:true, retainedCageSizes:[10]})).toThrow('between 2 and 9');
   });
-  it.each([true, false])('retains a cage of at least four cells with logic-only %s', logicOnly => {
-    const puzzle = generateVerifiedPuzzle({dig:true, minimumCageSize:4, logicOnly}, {random:rng(3), maxDigMilliseconds:120000});
-    expect(puzzle.cages.some(cage=>cage.cells.length>=4)).toBe(true);
+  it.each([true, false])('retains every selected exact cage size with logic-only %s', logicOnly => {
+    const puzzle = generateVerifiedPuzzle({dig:true, retainedCageSizes:[2,3,4], logicOnly}, {random:rng(3), maxDigMilliseconds:120000});
+    for(const size of [2,3,4]) expect(puzzle.cages.some(cage=>cage.cells.length===size)).toBe(true);
     expect(puzzle.digging!.removed).toBeGreaterThan(0);
     expect(countKillerSolutions(puzzle.cages)).toBe(1);
     if(logicOnly) expect(puzzle.logicallySolved).toBe(true);
