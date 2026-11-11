@@ -15,7 +15,7 @@ import { scoredTally } from './engine/techniqueScores';
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   ${header.replace('<button id="about"', '<button id="open-settings" type="button" aria-haspopup="dialog">Settings</button><button id="about"')}
-  <div class="generation-toolbar"><div class="generation-actions"><button id="generate" type="button">↻ Generate</button>${importButton}<fieldset id="retained-cage-sizes"><legend>Allowed cells per cage</legend>${Array.from({length:8},(_,i)=>i+2).map(size=>`<label>${size} cells <select name="cage-size" data-size="${size}" aria-label="${size}-cell cages"><option value="none">None</option><option value="required" ${DEFAULT_CAGE_SIZES.includes(size) ? 'selected' : ''}>At least 1</option></select></label>`).join('')}</fieldset><label class="symmetry-option"><input id="dig-cages" type="checkbox" checked> Dig cages after generation</label><label class="symmetry-option"><input id="dig-pairs" type="checkbox" checked> Dig cages in pairs</label><label class="symmetry-option"><input id="logic-only" type="checkbox" checked title="Applies to the next generated puzzle. Every cell must be solvable with logical techniques; digging must preserve this complete solve."> Require a complete logical solve</label></div><p id="generation-live" role="timer" hidden></p><dl id="generation-summary" aria-label="Generated puzzle details" hidden></dl></div>
+  <div class="generation-toolbar"><div class="generation-actions"><button id="generate" type="button">↻ Generate</button>${importButton}<label class="symmetry-option">Cage arithmetic <select id="cage-operation" aria-label="Cage arithmetic"><option value="sum">Sum</option><option value="product">Product</option></select></label><fieldset id="retained-cage-sizes"><legend>Allowed cells per cage</legend>${Array.from({length:8},(_,i)=>i+2).map(size=>`<label>${size} cells <select name="cage-size" data-size="${size}" aria-label="${size}-cell cages"><option value="none">None</option><option value="required" ${DEFAULT_CAGE_SIZES.includes(size) ? 'selected' : ''}>At least 1</option></select></label>`).join('')}</fieldset><label class="symmetry-option"><input id="dig-cages" type="checkbox" checked> Dig cages after generation</label><label class="symmetry-option"><input id="dig-pairs" type="checkbox" checked> Dig cages in pairs</label><label class="symmetry-option"><input id="logic-only" type="checkbox" checked title="Applies to the next generated puzzle. Every cell must be solvable with logical techniques; digging must preserve this complete solve."> Require a complete logical solve</label></div><p id="generation-live" role="timer" hidden></p><dl id="generation-summary" aria-label="Generated puzzle details" hidden></dl></div>
   <main>
     <div class="workspace generation-workspace">
       <section class="board-panel" aria-labelledby="board-title">
@@ -104,6 +104,7 @@ function updateSolverControls() {
   document.querySelector<HTMLButtonElement>('#open-import')!.disabled = busy;
   updateExportControls(!!solution && !busy);
   document.querySelector<HTMLButtonElement>('#edit-custom')!.disabled = !editablePuzzle || busy;
+  document.querySelector<HTMLSelectElement>('#cage-operation')!.disabled = busy;
   digToggle.disabled = busy;
   retainedCageSizes.disabled = busy;
   logicOnlyToggle.disabled = busy;
@@ -180,6 +181,7 @@ nextButton.addEventListener('click', () => seekWalkthrough(walkthroughPosition +
 const selectedCageSizes = () => [...document.querySelectorAll<HTMLSelectElement>('select[name="cage-size"]')].filter(input=>input.value === 'required').map(input=>Number(input.dataset.size));
 const options = (): PuzzleOptions => ({
   dig: digToggle.checked,
+  operation: document.querySelector<HTMLSelectElement>('#cage-operation')!.value as 'sum'|'product',
   retainedCageSizes: selectedCageSizes(),
   logicOnly: logicOnlyToggle.checked,
   digPairs: pairToggle.checked,
@@ -189,7 +191,7 @@ const options = (): PuzzleOptions => ({
 function validate() {
   const selected = options();
   const error = cageOptionsError(selected) ?? retainedCageSizesError(selected) ?? (selected.sizes?.every(size => size === 9)
-    ? 'Nine-cell cages all sum to 45 and cannot give a unique puzzle. Allow smaller cage sizes.' : null);
+    ? 'Nine-cell cages all contain digits 1–9 and cannot give a unique puzzle. Allow smaller cage sizes.' : null);
   errorText.textContent = error ?? '';
   errorText.hidden = !error;
   const dialogError = document.querySelector<HTMLElement>('#cage-settings-error')!;
@@ -226,7 +228,7 @@ function renderBoard(values: number[], cages: Cage[]) {
     // Include peer candidates removed automatically when a digit is placed.
     const removed = beforeStep && !values[i] ? digitsOf(beforeStep.cands[i] & ~solvingGrid.cands[i]) : [];
     cell.append(digit);
-    cell.setAttribute('aria-label', `Row ${Math.floor(i / 9) + 1}, column ${i % 9 + 1}, ${values[i] || 'empty'}, ${cage ? `cage sum ${cage.sum}, ${cage.cells.length} cells` : 'no cage'}`);
+    cell.setAttribute('aria-label', `Row ${Math.floor(i / 9) + 1}, column ${i % 9 + 1}, ${values[i] || 'empty'}, ${cage ? `cage ${cage.operation ?? 'sum'} ${cage.sum}, ${cage.cells.length} cells` : 'no cage'}`);
     cell.classList.toggle('deduction-cell', !revealSolution && !!history[walkthroughPosition - 1]?.step.cells.includes(i));
     if (placed) cell.setAttribute('aria-label', cell.getAttribute('aria-label') + ', placed this step');
     if (currentStep?.supportCells.includes(i)) cell.setAttribute('aria-label', cell.getAttribute('aria-label') + ', supporting cell');
@@ -264,7 +266,8 @@ function renderBoard(values: number[], cages: Cage[]) {
     if (cage.cells[0] === i) {
       const label = document.createElement('span');
       label.className = 'cage-sum';
-      label.textContent = String(cage.sum);
+      label.textContent = String(cage.sum) + (cage.operation === 'product' ? '×' : '');
+      if(cage.operation === 'product' && cage.sum>=10000) label.style.fontSize='10px';
       label.setAttribute('aria-hidden', 'true');
       cell.append(label);
     }

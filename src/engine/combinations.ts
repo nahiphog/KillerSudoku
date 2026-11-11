@@ -4,7 +4,7 @@ export interface CombinationRow {
 }
 
 /** All unordered sets of distinct digits 1–9, grouped by sum. */
-export function combinationTable(size: number): CombinationRow[] {
+export function combinationTable(size: number, operation: 'sum' | 'product' = 'sum'): CombinationRow[] {
   if (!Number.isInteger(size) || size < 2 || size > 9) {
     throw new Error('Choose a cage size from 2 to 9.');
   }
@@ -18,9 +18,9 @@ export function combinationTable(size: number): CombinationRow[] {
     }
     const remaining = size - digits.length;
     for (let digit = next; digit <= 10 - remaining; digit++) {
-      visit([...digits, digit], digit + 1, sum + digit);
+      visit([...digits, digit], digit + 1, operation === 'product' ? sum * digit : sum + digit);
     }
   }
-  visit([], 1, 0);
+  visit([], 1, operation === 'product' ? 1 : 0);
   return [...bySum].sort(([a], [b]) => a - b).map(([sum, combinations]) => ({ sum, combinations }));
 }

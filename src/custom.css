@@ -29,3 +29,8 @@
 
 .cage-free-tag { position: absolute; top: 2px; right: 4px; color: #ad5521; font: bold 14px/1 sans-serif; pointer-events: none; }
 .custom-board td.cage-free { background: #fff5e9; }
+
+.custom-board { width: min(100%, var(--sudoku-grid-size)); margin-inline: auto; }
+.workspace { grid-template-columns: minmax(0, 608px) minmax(270px, 1fr); }
+@media(max-width: 1000px) { .workspace { grid-template-columns: 1fr; } }
+#custom-operation { display: block; margin: 8px 0 14px; padding: 8px; }

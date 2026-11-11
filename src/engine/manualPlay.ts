@@ -27,9 +27,9 @@ export function manualStatus(board: ManualBoard, cages: Cage[]): { conflicts: Se
     for (const cell of unit) if (board.values[cell] && unit.some(other => other !== cell && board.values[other] === board.values[cell])) conflicts.add(cell);
   }
   for (const cage of cages) {
-    const sum = cage.cells.reduce((total, cell) => total + board.values[cell], 0);
+    const sum = cage.cells.reduce((total, cell) => cage.operation === 'product' ? total * (board.values[cell] || 1) : total + board.values[cell], cage.operation === 'product' ? 1 : 0);
     const full = cage.cells.every(cell => board.values[cell] !== 0);
-    if (sum > cage.sum || (full && sum !== cage.sum) || (!full && sum === cage.sum)) {
+    if (sum > cage.sum || (full && sum !== cage.sum) || (!full && (cage.operation === 'product' ? cage.sum % sum !== 0 : sum === cage.sum))) {
       cage.cells.filter(cell => board.values[cell]).forEach(cell => conflicts.add(cell));
     }
   }

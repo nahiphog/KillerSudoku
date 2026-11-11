@@ -1,7 +1,7 @@
 import type { Cage } from './engine/cages';
 
 export interface ExportGrid {
-  cages: { cells: number[]; sum: number | null }[];
+  cages: { cells: number[]; sum: number | null; operation?: 'sum' | 'product' }[];
   values: number[];
   notes: number[][];
   cageFreeCells?: number[];
@@ -15,7 +15,7 @@ export function serializeGrid(grid: ExportGrid): string {
   return JSON.stringify({
     format: 'killer-sudoku', version: 1, size: 9,
     digits: grid.values.join(''),
-    cages: grid.cages.map(cage => ({ sum: cage.sum, cells: [...cage.cells].sort((a,b)=>a-b).map(address) })),
+    cages: grid.cages.map(cage => ({ ...(cage.operation === 'product' ? {operation:'product',product:cage.sum} : {sum:cage.sum}), cells: [...cage.cells].sort((a,b)=>a-b).map(address) })),
     notes: Object.fromEntries(grid.notes.flatMap((digits, cell) => digits.length ? [[address(cell), digits]] : [])),
     uncagedCells: Array.from({length:81},(_,i)=>i).filter(cell=>!covered.has(cell)).map(address),
     cageFreeCells: (grid.cageFreeCells ?? []).map(address),
@@ -25,7 +25,7 @@ export function serializeGrid(grid: ExportGrid): string {
 export function visibleGrid(board: HTMLElement, cages: Cage[] | ExportGrid['cages'], cageFreeCells: number[] = []): ExportGrid {
   const cells = [...board.querySelectorAll('td')];
   return {
-    cages: cages.map(cage=>({cells:[...cage.cells],sum:cage.sum})), cageFreeCells,
+    cages: cages.map(cage=>({cells:[...cage.cells],sum:cage.sum,...(cage.operation ? {operation:cage.operation} : {})})), cageFreeCells,
     values: cells.map(cell=>Number(cell.querySelector('.cell-digit, .custom-digit')?.textContent ?? 0)),
     notes: cells.map(cell=>[...cell.querySelectorAll('.cell-candidates > span, .custom-notes > span')]
       .filter(mark=>!mark.classList.contains('removed-candidate')).map(mark=>Number(mark.textContent)).filter(Boolean)),
@@ -100,7 +100,7 @@ export function setupGridExport(board: HTMLElement, snapshot: ()=>ExportGrid) {
   let url: string | undefined;
   textButton.addEventListener('click',async()=>{
     const text=serializeGrid(snapshot());fallback.hidden=true;
-    try {await navigator.clipboard.writeText(text);status.textContent='Grid string copied, including all cage positions and sums.';}
+    try {await navigator.clipboard.writeText(text);status.textContent='Grid string copied, including all cage positions and clues.';}
     catch {fallback.value=text;fallback.hidden=false;fallback.focus();fallback.select();status.textContent='Clipboard access is unavailable. Copy the selected grid string manually.';}
   });
   imageButton.addEventListener('click',async()=>{

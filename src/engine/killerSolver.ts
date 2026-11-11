@@ -23,6 +23,8 @@ export type SolverResult =
 const tables = new Map(Array.from({ length: 8 }, (_, i) => [i + 2, combinationTable(i + 2)]));
 // Custom layouts may use a single-cell cage, whose sum fixes its digit.
 tables.set(1, Array.from({ length: 9 }, (_, i) => ({ sum: i + 1, combinations: [[i + 1]] })));
+const productTables = new Map(Array.from({length:8},(_,i)=>[i+2,combinationTable(i+2,'product')]));
+productTables.set(1,tables.get(1)!);
 export const startSolver = (): Grid => emptyGrid();
 // Exhaust easier bands before trying a harder deduction, for meaningful ratings.
 const logicalOrder = TECHNIQUES.filter(t => t.id !== 'BRUTE_FORCE')
@@ -52,7 +54,7 @@ function canAssign(masks: number[], forcedCell = -1, forcedDigit = 0): boolean {
 export function cageSupports(grid: Grid, cage: Cage): { combinations: number[][]; supports: number[] } {
   const supports = cage.cells.map(() => 0);
   const combinations: number[][] = [];
-  const sets = tables.get(cage.cells.length)?.find(row => row.sum === cage.sum)?.combinations ?? [];
+  const sets = (cage.operation === 'product' ? productTables : tables).get(cage.cells.length)?.find(row => row.sum === cage.sum)?.combinations ?? [];
   for (const digits of sets) {
     const setMask = digits.reduce((mask, d) => mask | bit(d), 0);
     const masks = cage.cells.map(cell => (grid.values[cell] ? bit(grid.values[cell]) : grid.cands[cell]) & setMask);
@@ -80,16 +82,17 @@ export function nextKillerStep(grid: Grid, cages: Cage[]): SolverResult {
   let cageStep: Deduction | null = null;
   for (const cage of cages) {
     const { combinations, supports } = cageSupports(grid, cage);
+    const operation = cage.operation ?? 'sum';
     const name = 'Cage at ' + cellName(cage.cells[0]);
-    if (!combinations.length) return { status: 'contradiction', message: name + ' has no valid combination for sum ' + cage.sum + '.' };
+    if (!combinations.length) return { status: 'contradiction', message: name + ' has no valid combination for ' + operation + ' ' + cage.sum + '.' };
     if (cageStep) continue;
     const empty = cage.cells.filter(i => !grid.values[i]);
     if (empty.length === 1) {
-      const usedSum = cage.cells.reduce((sum, i) => sum + grid.values[i], 0);
-      const digit = cage.sum - usedSum;
+      const usedSum = cage.cells.reduce((total, i) => operation === 'product' ? total * (grid.values[i] || 1) : total + grid.values[i], operation === 'product' ? 1 : 0);
+      const digit = operation === 'product' ? cage.sum / usedSum : cage.sum - usedSum;
       cageStep = {
         technique: 'Cage remainder',
-        description: name + ': the placed digits total ' + usedSum + '. The remaining cell ' + cellName(empty[0]) + ' must be ' + cage.sum + ' − ' + usedSum + ' = ' + digit + '.',
+        description: name + ': the placed digits have ' + operation + ' ' + usedSum + '. The remaining cell ' + cellName(empty[0]) + ' must be ' + cage.sum + (operation === 'product' ? ' ÷ ' : ' − ') + usedSum + ' = ' + digit + '.',
         placements: [{ cell: empty[0], digit }], eliminations: [], cells: cage.cells,
         supportCells: cage.cells,
         supportDigits: cage.cells.filter(cell => grid.values[cell]).map(cell => ({ cell, digit: grid.values[cell] })),
@@ -100,7 +103,7 @@ export function nextKillerStep(grid: Grid, cages: Cage[]): SolverResult {
       digitsOf(grid.cands[cell] & ~supports[index]).map(digit => ({ cell, digit })));
     if (eliminations.length) cageStep = {
       technique: 'Cage combinations',
-      description: name + ' has ' + cage.cells.length + ' cells and sum ' + cage.sum + '. Compatible digit sets: ' +
+      description: name + ' has ' + cage.cells.length + ' cells and ' + operation + ' ' + cage.sum + '. Compatible digit sets: ' +
         combinations.map(d => '{' + d.join(', ') + '}').join('; ') +
         '. Matching these distinct digits to the current cell candidates rules out the listed candidates: none can occur in a valid assignment of this cage.',
       placements: [], eliminations, cells: cage.cells,

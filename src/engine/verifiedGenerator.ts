@@ -72,7 +72,7 @@ export function generateVerifiedPuzzle(options: PuzzleOptions, limits: Generatio
   const error = cageOptionsError(options) ?? retainedCageSizesError(options);
   if (error) throw new Error(error);
   const sizes = options.sizes ?? DEFAULT_CAGE_SIZES;
-  if (sizes.every(size => size === 9)) throw new Error('Nine-cell cages all sum to 45 and cannot give a unique puzzle. Allow smaller cage sizes.');
+  if (sizes.every(size => size === 9)) throw new Error('Nine-cell cages all contain digits 1–9 and cannot give a unique puzzle. Allow smaller cage sizes.');
   const requiredSizes = options.retainedCageSizes ?? [];
   const hasRequiredCage = (cages: Cage[]) => requiredSizes.every(size => cages.some(cage => cage.cells.length === size));
   const random = limits.random ?? Math.random;

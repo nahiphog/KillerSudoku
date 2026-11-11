@@ -1,3 +1,5 @@
+import { combinationTable } from './engine/combinations';
+import type { CageOperation } from './engine/cages';
 import { parseGridString } from './engine/gridImport';
 import { exportControls, setupGridExport, visibleGrid, serializeGrid } from './gridExport';
 import { customEntryGrid } from './engine/customEntries';
@@ -17,7 +19,7 @@ document.querySelector('#app')!.innerHTML = `${header}
 <table class="board custom-board" role="grid" aria-label="Custom cage layout" aria-describedby="build-help"><tbody>${Array.from({ length: 9 }, (_, r) => `<tr>${Array.from({ length: 9 }, (_, c) => `<td role="gridcell" tabindex="${r + c === 0 ? 0 : -1}" data-cell="${r * 9 + c}"></td>`).join('')}</tr>`).join('')}</tbody></table>
 <div class="board-footer"><p id="selection-status" role="status"></p></div>${exportControls}</section>
 <aside><section class="entry-panel"><h2>Cell entries</h2><div class="entry-modes" aria-label="Build mode"><button type="button" data-mode="cages" aria-pressed="true">Cages</button><button type="button" data-mode="digits" aria-pressed="false">Digits</button><button type="button" data-mode="notes" aria-pressed="false">Snyder notations</button><button type="button" data-mode="cage-free" aria-pressed="false">Cage-free cells</button></div><p>Choose Digits or Snyder notations, then select a cell and enter 1–9. P toggles notations. Delete or Backspace erases. Notations list every allowed digit; an empty cell is unrestricted.</p><p>Choose Cage-free cells and click cells (or press Space) to toggle × tags. Tagged cells stay outside every cage; digits and notations are still allowed. Remove an existing cage before tagging its cells.</p><div class="custom-number-pad"><button type="button" data-digit="1">1</button><button type="button" data-digit="2">2</button><button type="button" data-digit="3">3</button><button type="button" data-digit="4">4</button><button type="button" data-digit="5">5</button><button type="button" data-digit="6">6</button><button type="button" data-digit="7">7</button><button type="button" data-digit="8">8</button><button type="button" data-digit="9">9</button><button type="button" id="erase-cell">Erase</button></div><p id="entry-status" role="status"></p><p id="entry-error" class="error" role="alert"></p></section><section class="generate-panel"><h2>Define your cages</h2><p id="build-help">Click or tap cells to select them; click again to deselect. Use arrow keys to move and Space to select. Each cage holds 1–9 connected cells with no repeated digits. Select an existing cage to edit it.</p>
-<label for="cage-sum-input">Cage sum</label><input id="cage-sum-input" type="number" min="1" max="45" step="1" placeholder="Automatic for new layouts"><p id="sum-help">Select a cage to edit its cells and sum. Leave sums blank only when generating a new layout automatically.</p><div class="build-actions"><button id="save-cage">Add cage</button><button id="clear-selection">Clear selection</button><button id="delete-cage" hidden>Delete cage</button></div>
+<label for="custom-operation">Cage arithmetic</label><select id="custom-operation"><option value="sum">Sum</option><option value="product">Product</option></select><label for="cage-sum-input">Cage target</label><input id="cage-sum-input" type="number" min="1" max="362880" step="1" placeholder="Automatic for new layouts"><p id="sum-help">Select a cage to edit its cells, arithmetic and target. Leave sums blank only when generating a new layout automatically.</p><div class="build-actions"><button id="save-cage">Add cage</button><button id="clear-selection">Clear selection</button><button id="delete-cage" hidden>Delete cage</button></div>
 <p id="layout-error" class="error" role="alert"></p><p id="cage-count"></p><p>Unassigned cells follow ordinary Sudoku rules. For new layouts, blank sums can be generated automatically. Imported or entered sums stay fixed. Supply a sum for every cage before verifying edited clues. Some layouts may not yield a unique puzzle.</p>
 <button id="build">Generate unique puzzle</button><button id="clear-layout">Clear all cages</button>
 <p id="build-live" role="timer" hidden></p><p id="build-status" role="status" aria-live="polite">Add your first cage to begin.</p>
@@ -28,6 +30,7 @@ const element = <T extends HTMLElement = HTMLElement>(id: string) => document.qu
 const cells = [...document.querySelectorAll<HTMLTableCellElement>('.custom-board td')];
 let groups: number[][] = [];
 let sums: (number | null)[] = [];
+let operations: CageOperation[] = [];
 let fixedSums = false;
 let entries = newManualBoard();
 const cageFreeCells = new Set<number>();
@@ -40,7 +43,7 @@ let puzzle: VerifiedPuzzle | null = null;
 const status = element('build-status');
 const liveTimer = generationTimer(element('build-live'));
 
-const updateExportControls = setupGridExport(document.querySelector<HTMLElement>('.custom-board')!, () => visibleGrid(document.querySelector<HTMLElement>('.custom-board')!, puzzle?.cages ?? groups.map((cells,i)=>({cells,sum:sums[i] ?? null})), [...cageFreeCells]));
+const updateExportControls = setupGridExport(document.querySelector<HTMLElement>('.custom-board')!, () => visibleGrid(document.querySelector<HTMLElement>('.custom-board')!, puzzle?.cages ?? groups.map((cells,i)=>({cells,sum:sums[i] ?? null,operation:operations[i]})), [...cageFreeCells]));
 function invalidate() { puzzle = null; element('play').hidden = true; status.textContent = 'Entries or layout changed. Verify or generate again to refresh the walkthrough.'; }
 function render() {
   updateExportControls(!worker);
@@ -76,7 +79,7 @@ function render() {
     cell.append(outline);
     if (i === Math.min(...groups[owner])) {
       const label = document.createElement('span'); label.className = 'cage-sum';
-      label.textContent = puzzle ? String(puzzle.cages[owner].sum) : sums[owner] != null ? String(sums[owner]) : `C${owner + 1}`; cell.append(label);
+      label.textContent = puzzle ? String(puzzle.cages[owner].sum) : sums[owner] != null ? String(sums[owner]) : `C${owner + 1}`; if(operations[owner]==='product') {label.textContent+='×';if((sums[owner] ?? 0)>=10000) label.style.fontSize='10px';} cell.append(label);
     }
   });
   element('coverage').textContent = `${owners.size}/81 CELLS IN CAGES`;
@@ -84,6 +87,7 @@ function render() {
   element('selection-status').textContent = `${selected.size} cells selected${editing >= 0 ? ` · editing cage ${editing + 1}` : ''}`;
   const error = selected.size ? customLayoutError([...groups.filter((_, i) => i !== editing), [...selected]], [...cageFreeCells]) ?? sumError() : null;
   element<HTMLInputElement>('cage-sum-input').disabled = !!worker || !selected.size;
+  element<HTMLSelectElement>('custom-operation').disabled = !!worker;
   element('layout-error').textContent = error ?? '';
   element<HTMLButtonElement>('save-cage').disabled = !!worker || !selected.size || !!error;
   element('save-cage').textContent = editing >= 0 ? 'Save cage' : 'Add cage';
@@ -95,13 +99,13 @@ function render() {
   for(const button of document.querySelectorAll<HTMLButtonElement>('[data-mode]')) {button.disabled=!!worker;button.setAttribute('aria-pressed', String(button.dataset.mode === mode));}
   for(const button of document.querySelectorAll<HTMLButtonElement>('[data-digit],#erase-cell')) button.disabled=!!worker || mode === 'cages' || mode === 'cage-free';
   element<HTMLButtonElement>('build').disabled = !worker && ((!groups.length && !entries.values.some(Boolean) && !entries.notes.some(Boolean)) || selected.size > 0 || !!entryError || (fixedSums && sums.some(sum=>sum===null)));
-  element('sum-help').textContent = fixedSums ? 'Select a cage, edit its cells and sum, then Save cage. Every cage needs a sum before verification.' : 'Select a cage to edit its cells and sum. Leave all sums blank for automatic generation.';
+  element('sum-help').textContent = fixedSums ? 'Select a cage, edit its cells, arithmetic and target, then Save cage. Every cage needs a target before verification.' : 'Select a cage to edit its cells, arithmetic and target. Leave all sums blank for automatic generation.';
   element('build').textContent = worker ? 'Cancel search' : fixedSums ? 'Verify and prepare walkthrough' : 'Generate unique puzzle';
   for (const id of ['clear-selection', 'clear-layout', 'delete-cage']) element<HTMLButtonElement>(id).disabled = !!worker;
   const list = element('cage-list'); list.replaceChildren();
   groups.forEach((group, i) => {
-    const button = document.createElement('button'); button.textContent = `Cage ${i + 1} · ${group.length} cells${puzzle ? ' · sum ' + puzzle.cages[i].sum : sums[i] != null ? ' · sum ' + sums[i] : ' · sum needed'}`;
-    button.disabled = !!worker; button.addEventListener('click', () => { mode = 'cages'; editing = i; selected = new Set(group); element<HTMLInputElement>('cage-sum-input').value=String(sums[i] ?? ''); render(); }); list.append(button);
+    const button = document.createElement('button'); button.textContent = `Cage ${i + 1} · ${group.length} cells${puzzle ? ' · ' + (operations[i] ?? 'sum') + ' ' + puzzle.cages[i].sum : sums[i] != null ? ' · ' + (operations[i] ?? 'sum') + ' ' + sums[i] : ' · target needed'}`;
+    button.disabled = !!worker; button.addEventListener('click', () => { mode = 'cages'; editing = i; selected = new Set(group); element<HTMLInputElement>('cage-sum-input').value=String(sums[i] ?? ''); element<HTMLSelectElement>('custom-operation').value=operations[i] ?? 'sum'; render(); }); list.append(button);
   });
 }
 function select(index: number) {
@@ -117,7 +121,7 @@ function select(index: number) {
   const owner = groups.findIndex(group => group.includes(index));
   if (owner >= 0 && owner !== editing) {
     if (selected.size) { element('layout-error').textContent = 'Save or clear your selection before editing another cage.'; return; }
-    editing = owner; selected = new Set(groups[owner]); element<HTMLInputElement>('cage-sum-input').value=String(sums[owner] ?? '');
+    editing = owner; selected = new Set(groups[owner]); element<HTMLInputElement>('cage-sum-input').value=String(sums[owner] ?? ''); element<HTMLSelectElement>('custom-operation').value=operations[owner] ?? 'sum';
   } else if (selected.has(index)) selected.delete(index);
   else selected.add(index);
   render();
@@ -146,24 +150,26 @@ for(const button of document.querySelectorAll<HTMLButtonElement>('[data-digit]')
 element('erase-cell').addEventListener('click',eraseEntry);
 function sumError(): string | null {
   const raw=element<HTMLInputElement>('cage-sum-input').value;
-  if(!raw) return fixedSums ? 'Enter a sum for this cage.' : null;
+  if(!raw) return fixedSums ? 'Enter a target for this cage.' : null;
   const sum=Number(raw), n=selected.size;
-  return !Number.isInteger(sum) || sum<n*(n+1)/2 || sum>n*(19-n)/2 ? 'Enter a valid sum for this cage’s distinct digits.' : null;
+  const op=element<HTMLSelectElement>('custom-operation').value as CageOperation;
+  return !Number.isInteger(sum) || n<1 || n>9 || !(n===1 ? sum>=1 && sum<=9 : combinationTable(n,op).some(row=>row.sum===sum)) ? 'Enter a valid target for this cage’s operation and distinct digits.' : null;
 }
 element('cage-sum-input').addEventListener('input',render);
+element('custom-operation').addEventListener('change',render);
 element('save-cage').addEventListener('click', () => {
   const next = [...selected].sort((a, b) => a - b);
   if(worker || sumError() || customLayoutError([...groups.filter((_,i)=>i!==editing),next],[...cageFreeCells])) return;
   const raw=element<HTMLInputElement>('cage-sum-input').value;
   const sum=raw ? Number(raw) : null;
   if(sum!==null) fixedSums=true;
-  if (editing >= 0) {groups[editing] = next;sums[editing]=sum;} else {groups.push(next);sums.push(sum);}
+  if (editing >= 0) {groups[editing] = next;sums[editing]=sum;operations[editing]=element<HTMLSelectElement>('custom-operation').value as CageOperation;} else {groups.push(next);sums.push(sum);operations.push(element<HTMLSelectElement>('custom-operation').value as CageOperation);}
   element<HTMLInputElement>('cage-sum-input').value='';
   selected.clear(); editing = -1; invalidate(); render();
 });
 element('clear-selection').addEventListener('click', () => { selected.clear(); editing = -1; element<HTMLInputElement>('cage-sum-input').value=''; render(); });
-element('delete-cage').addEventListener('click', () => { groups.splice(editing, 1); sums.splice(editing,1); element<HTMLInputElement>('cage-sum-input').value=''; selected.clear(); editing = -1; invalidate(); render(); });
-element('clear-layout').addEventListener('click', () => { groups = []; sums = []; element<HTMLInputElement>('cage-sum-input').value=''; selected.clear(); editing = -1; invalidate(); render(); });
+element('delete-cage').addEventListener('click', () => { groups.splice(editing, 1); sums.splice(editing,1);operations.splice(editing,1); element<HTMLInputElement>('cage-sum-input').value=''; selected.clear(); editing = -1; invalidate(); render(); });
+element('clear-layout').addEventListener('click', () => { groups = []; sums = []; operations = []; element<HTMLInputElement>('cage-sum-input').value=''; selected.clear(); editing = -1; invalidate(); render(); });
 function stop() { liveTimer.stop(); worker?.terminate(); worker = null; render(); }
 element('build').addEventListener('click', () => {
   if(worker) {stop();status.textContent='Search cancelled. Your layout is unchanged.';return;}
@@ -174,13 +180,13 @@ element('build').addEventListener('click', () => {
     worker.onmessage = (event: MessageEvent<{ progress?: number; puzzle?: VerifiedPuzzle; error?: string }>) => {
       if (event.data.progress !== undefined) { status.textContent = `Checking candidate ${event.data.progress} for a unique solution…`; return; }
       if (event.data.puzzle) {
-        puzzle = event.data.puzzle; sums=puzzle.cages.map(cage=>cage.sum); fixedSums=true; element('play').hidden = false;
-        status.textContent = `Unique solution verified in ${(puzzle.elapsedMilliseconds / 1000).toFixed(1)} seconds. Your cage sums are shown on the grid. Ready to view.`;
+        puzzle = event.data.puzzle; sums=puzzle.cages.map(cage=>cage.sum);operations=puzzle.cages.map(cage=>cage.operation ?? 'sum'); fixedSums=true; element('play').hidden = false;
+        status.textContent = `Unique solution verified in ${(puzzle.elapsedMilliseconds / 1000).toFixed(1)} seconds. Your cage clues are shown on the grid. Ready to view.`;
       } else status.textContent = event.data.error ?? 'Unable to generate a puzzle. Try again.';
       stop();
     };
     worker.onerror = () => { stop(); status.textContent = 'Search failed. Your layout is unchanged. Please try again.'; };
-    worker.postMessage(fixedSums ? serializeGrid({cages:groups.map((cells,i)=>({cells,sum:sums[i]})),values:entries.values,notes:entries.notes.map(digitsOf),cageFreeCells:[...cageFreeCells]}) : {groups,entries,cageFreeCells:[...cageFreeCells]}); render();
+    worker.postMessage(fixedSums ? serializeGrid({cages:groups.map((cells,i)=>({cells,sum:sums[i],operation:operations[i]})),values:entries.values,notes:entries.notes.map(digitsOf),cageFreeCells:[...cageFreeCells]}) : {groups,entries,cageFreeCells:[...cageFreeCells],operations}); render();
   } catch { stop(); status.textContent = 'Unable to start the search. Please reload and try again.'; }
 });
 element('play').addEventListener('click', () => {
@@ -195,7 +201,7 @@ if(new URLSearchParams(location.search).get('edit')==='1') {
     const saved=sessionStorage.getItem('edit-grid');
     if(!saved) throw new Error('No grid is available to edit. Import a grid and choose Edit in Custom Build.');
     const restored=parseGridString(saved);
-    groups=restored.cages.map(cage=>[...cage.cells]);sums=restored.cages.map(cage=>cage.sum);entries=restored.entries;
+    groups=restored.cages.map(cage=>[...cage.cells]);sums=restored.cages.map(cage=>cage.sum);operations=restored.cages.map(cage=>cage.operation ?? 'sum');entries=restored.entries;
     restored.cageFreeCells.forEach(cell=>cageFreeCells.add(cell));fixedSums=true;render();
     status.textContent='Imported grid restored. Edit cages, sums, digits or Snyder notations, then verify to prepare a new walkthrough.';
   } catch(error) {status.textContent=(error as Error).message;}

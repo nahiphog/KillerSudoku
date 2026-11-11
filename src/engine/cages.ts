@@ -1,7 +1,8 @@
 import { UNITS } from '../vendor/sudokui/board';
 
-export interface Cage { cells: number[]; sum: number }
-export interface CageOptions { sizes?: readonly number[]; symmetric?: boolean; requiredSizes?: readonly number[] }
+export type CageOperation = 'sum' | 'product';
+export interface Cage { cells: number[]; sum: number; operation?: CageOperation }
+export interface CageOptions { sizes?: readonly number[]; symmetric?: boolean; requiredSizes?: readonly number[]; operation?: CageOperation }
 export const DEFAULT_CAGE_SIZES = [2, 3, 4, 5, 6, 7];
 
 export function orthogonalNeighbors(cell: number): number[] {
@@ -115,7 +116,8 @@ export function generateCages(values: ArrayLike<number>, optionsOrRandom: CageOp
   }
   const finish = (partition: number[][]) => partition.map(cells => ({
     cells: cells.slice().sort((a, b) => a - b),
-    sum: cells.reduce((sum, i) => sum + values[i], 0),
+    sum: cells.reduce((total, i) => options.operation === 'product' ? total * values[i] : total + values[i], options.operation === 'product' ? 1 : 0),
+    ...(options.operation === 'product' ? {operation: 'product' as const} : {}),
   })).sort((a, b) => a.cells[0] - b.cells[0]);
   if (search()) return finish(groups);
   // Guaranteed valid layouts when these sizes were explicitly selected.

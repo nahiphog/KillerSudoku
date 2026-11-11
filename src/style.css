@@ -14,3 +14,5 @@
 .grid-import-dialog textarea { display: block; width: 100%; min-height: 180px; margin-top: 8px; resize: vertical; }
 .import-actions { display: flex; gap: 12px; }
 .import-actions button { width: auto; }
+
+:root { --sudoku-grid-size: 540px; }

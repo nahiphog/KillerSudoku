@@ -1,7 +1,7 @@
 import { customEntryGrid } from './customEntries';
 import type { ManualBoard } from './manualPlay';
 import { bit, cloneGrid, digitsOf, emptyGrid, setValue, type Grid } from '../vendor/sudokui/board';
-import { orthogonalNeighbors, type Cage } from './cages';
+import { orthogonalNeighbors, type Cage, type CageOperation } from './cages';
 import { countKillerSolutions } from './digging';
 import { traceLogically, type GenerationLimits, type VerifiedPuzzle } from './verifiedGenerator';
 
@@ -64,11 +64,11 @@ function fillLayout(groups: number[][], random: () => number, deadline: number, 
   return fill(cloneGrid(initial));
 }
 
-export function generateCustomPuzzle(groups: number[][], limits: GenerationLimits = {}, entries?: ManualBoard, cageFreeCells: readonly number[] = []): VerifiedPuzzle {
+export function generateCustomPuzzle(groups: number[][], limits: GenerationLimits = {}, entries?: ManualBoard, cageFreeCells: readonly number[] = [], operations: readonly CageOperation[] = []): VerifiedPuzzle {
   const hasEntries = entries?.values.some(Boolean) || entries?.notes.some(Boolean);
   const error = cageFreeCellsError(groups, cageFreeCells) ?? (groups.length || !hasEntries ? customLayoutError(groups) : null);
   if (error) throw new Error(error);
-  if (!hasEntries && groups.every(group => group.length === 9)) throw new Error('Nine-cell cages always sum to 45. This layout cannot specify a unique solution. Add smaller cages.');
+  if (!hasEntries && groups.every(group => group.length === 9)) throw new Error('Nine-cell cages always contain digits 1–9. This layout cannot specify a unique solution. Add smaller cages.');
   const initial = customEntryGrid(entries, groups);
   const started = performance.now();
   const deadline = Date.now() + (limits.maxMilliseconds ?? 45000);
@@ -77,7 +77,7 @@ export function generateCustomPuzzle(groups: number[][], limits: GenerationLimit
     const grid = fillLayout(groups, limits.random ?? Math.random, deadline, initial);
     if (!grid) continue;
     const values = Array.from(grid.values);
-    const cages: Cage[] = groups.map(cells => ({ cells: [...cells].sort((a, b) => a - b), sum: cells.reduce((sum, cell) => sum + values[cell], 0) }));
+    const cages: Cage[] = groups.map((cells,index) => ({ cells: [...cells].sort((a, b) => a - b), sum: cells.reduce((total, cell) => operations[index] === 'product' ? total * values[cell] : total + values[cell], operations[index] === 'product' ? 1 : 0), ...(operations[index] === 'product' ? {operation:'product' as const} : {}) }));
     // A difficult candidate must not consume the entire search allowance.
     let count: number;
     try { count = countKillerSolutions(cages, Math.min(deadline, Date.now() + 2000), values, initial); }
