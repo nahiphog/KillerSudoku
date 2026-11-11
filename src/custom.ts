@@ -176,12 +176,12 @@ element('clear-layout').addEventListener('click', () => { groups = []; sums = []
 function stop() { liveTimer.stop(); worker?.terminate(); worker = null; render(); }
 element('build').addEventListener('click', () => {
   if(worker) {stop();status.textContent='Search cancelled. Your layout is unchanged.';return;}
-  liveTimer.start();
+  liveTimer.start(!fixedSums);
   status.textContent = fixedSums ? 'Verifying your edited cage sums and preparing the walkthrough…' : 'Searching for sums and checking uniqueness…';
   try {
     worker = fixedSums ? new Worker(new URL('./engine/import.worker.ts', import.meta.url), {type:'module'}) : new Worker(new URL('./engine/custom.worker.ts', import.meta.url), { type: 'module' });
     worker.onmessage = (event: MessageEvent<{ progress?: number; puzzle?: VerifiedPuzzle; error?: string }>) => {
-      if (event.data.progress !== undefined) { status.textContent = `Checking candidate ${event.data.progress} for a unique solution…`; return; }
+      if (event.data.progress !== undefined) { liveTimer.setAttempts(event.data.progress); status.textContent = `Checking candidate ${event.data.progress} for a unique solution…`; return; }
       if (event.data.puzzle) {
         puzzle = event.data.puzzle; sums=puzzle.cages.map(cage=>cage.sum);operations=puzzle.cages.map(cage=>cage.operation ?? 'sum'); fixedSums=true; element('play').hidden = false;
         status.textContent = `Unique solution verified in ${(puzzle.elapsedMilliseconds / 1000).toFixed(1)} seconds. Your cage clues are shown on the grid. Ready to view.`;

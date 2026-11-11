@@ -312,6 +312,7 @@ button.addEventListener('click', () => {
         return;
       }
       if (progress !== undefined) {
+        liveTimer.setAttempts(progress);
         status.textContent = `Checking candidate ${progress}: verifying a unique solution and complete logical solve.`;
         return;
       }
