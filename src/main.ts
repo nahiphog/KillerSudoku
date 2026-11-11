@@ -1,5 +1,5 @@
 import { importButton, setupGridImport } from './gridImportDialog';
-import { exportControls, setupGridExport, visibleGrid } from './gridExport';
+import { exportControls, setupGridExport, visibleGrid, serializeGrid } from './gridExport';
 import { generationTimer } from './generationTimer';
 import { customEntryGrid } from './engine/customEntries';
 import './style.css';
@@ -29,7 +29,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 </div>
         </div>
         <div class="board-footer"><span class="status-dot" aria-hidden="true"></span><p id="status" role="status" aria-live="polite">Generate a grid with cages to get started.</p></div>
-        ${exportControls}<div class="board-actions"><button id="toggle-solution" type="button" disabled>Hide solution</button><label><input id="show-candidates" type="checkbox" disabled> Show candidates</label></div>
+        ${exportControls}<button id="edit-custom" type="button" disabled>Edit in Custom Build</button><div class="board-actions"><button id="toggle-solution" type="button" disabled>Hide solution</button><label><input id="show-candidates" type="checkbox" disabled> Show candidates</label></div>
       </section>
       <aside>
         <section id="deduction-panel" class="solver-panel" aria-label="Current deduction" hidden>
@@ -79,6 +79,7 @@ function renderLinks() {
 let generation = 0;
 let worker: Worker | null = null;
 let solution: number[] | null = null;
+let editablePuzzle: VerifiedPuzzle | null = null;
 let activeCages: Cage[] = [];
 let exportedCageFreeCells: number[] = [];
 let restoredNotes: number[] | null = null;
@@ -102,6 +103,7 @@ function updateSolverControls() {
   const busy = !!worker;
   document.querySelector<HTMLButtonElement>('#open-import')!.disabled = busy;
   updateExportControls(!!solution && !busy);
+  document.querySelector<HTMLButtonElement>('#edit-custom')!.disabled = !editablePuzzle || busy;
   digToggle.disabled = busy;
   retainedCageSizes.disabled = busy;
   logicOnlyToggle.disabled = busy;
@@ -316,6 +318,7 @@ button.addEventListener('click', () => {
 });
 
 function acceptPuzzle(puzzle: VerifiedPuzzle, custom = false) {
+  editablePuzzle = puzzle;
   const { values, cages, proofSteps, difficulty, hardestTechnique: hardest, deductions, techniqueTally, elapsedMilliseconds, attempts, digging, logicallySolved: complete } = puzzle;
   const tally = document.querySelector<HTMLTableElement>('#technique-tally')!;
   tally.hidden = false;
@@ -372,4 +375,12 @@ setupGridImport(puzzle=>{
   document.querySelector('#board-title')!.textContent='Imported grid';
   document.querySelector('#badge')!.textContent='IMPORTED · '+puzzle.cages.length+' CAGES';
   document.querySelector('#status')!.textContent='Imported grid · verified unique solution · '+puzzle.proofSteps+' walkthrough steps.';
+});
+
+document.querySelector('#edit-custom')!.addEventListener('click',()=>{
+  if(!editablePuzzle || worker) return;
+  try {
+    sessionStorage.setItem('edit-grid',serializeGrid({cages:editablePuzzle.cages,values:editablePuzzle.entries?.values ?? Array(81).fill(0),notes:(editablePuzzle.entries?.notes ?? Array(81).fill(0)).map(digitsOf),cageFreeCells:editablePuzzle.cageFreeCells}));
+    location.href='./custom.html?edit=1';
+  } catch {status.textContent='Browser storage is unavailable. Enable session storage to edit this grid.';}
 });
