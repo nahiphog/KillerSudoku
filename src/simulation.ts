@@ -7,7 +7,7 @@ import { simulationStore } from './simulationStore';
 import { serializeGrid } from './gridExport';
 
 document.querySelector('#app')!.innerHTML = `${header}<main class="simulation-page">
-  <h1>Simulation</h1><p>Generate unique dug-killer puzzles using sum cages, sizes 2–7, rotational symmetry and paired digging. One trial is one generation search; unsuccessful searches are counted separately.</p>
+  <h1>Simulation</h1><p>Generate unique dug-killer puzzles using sum cages, allowed sizes 2–7, rotational symmetry and paired digging. One trial is one generation search; unsuccessful searches are counted separately.</p>
   <fieldset id="simulation-inputs"><label>Total trials <select id="trials">${TRIAL_COUNTS.map(n=>`<option value="${n}" ${n===1000000?'selected':''}>${n.toLocaleString()}</option>`).join('')}</select></label>
   <label>Display grids with difficulty ratings of at least <select id="minimum">${RATING_THRESHOLDS.map(n=>`<option value="${n}">${n.toLocaleString()}</option>`).join('')}</select></label>
   <label class="symmetry-option"><input type="checkbox" id="no-brute-force" checked> Display only grids that do not use brute force</label></fieldset>

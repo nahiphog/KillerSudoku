@@ -21,7 +21,7 @@ describe('simulation results',()=>{
     expect(histogramBin(2000000)).toBe(HISTOGRAM_EDGES.length-2);
   });
   it('exports a compact result with the same per-use rating as the generator',()=>{
-    const puzzle=generateVerifiedPuzzle({dig:true,logicOnly:false,retainedCageSizes:[2,3,4]}, {random:rng(3)});
+    const puzzle=generateVerifiedPuzzle({dig:true,digPairs:true,symmetric:true,logicOnly:false}, {random:rng(3)});
     const result=simulationResult(puzzle);
     expect(countKillerSolutions(result.cages)).toBe(1);
     expect(result.rating).toBeGreaterThan(0);
