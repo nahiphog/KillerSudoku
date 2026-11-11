@@ -61,7 +61,6 @@
 .removed-candidate { color: #b42332; font-weight: 800; text-decoration: line-through; text-decoration-thickness: 1.5px; }
 .support-digit { color: #7739a5; font-weight: 800; text-decoration: underline dotted; text-underline-offset: 2px; }
 .board td.support-cell { outline: 1px solid #7739a5; outline-offset: -3px; }
-.board td.support-cell .cage-sum { color: #7739a5; }
 .change-legend { display: none; flex-wrap: wrap; gap: 16px; margin-top: 8px; font-size: 11px; }
 .board-panel[data-view="solver"] .change-legend { display: flex; }
 @media (max-width: 400px) {

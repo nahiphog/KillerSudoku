@@ -52,6 +52,7 @@ function render() {
   cells.forEach((cell, i) => {
     const owner = owners.get(i);
     cell.replaceChildren();
+    cell.dataset.cageOperation = owner === undefined ? 'sum' : operations[owner] ?? 'sum';
     cell.classList.toggle('cage-free', cageFreeCells.has(i));
     if(cageFreeCells.has(i)) {const tag=document.createElement('span');tag.className='cage-free-tag';tag.textContent='×';tag.setAttribute('aria-hidden','true');cell.append(tag);}
     cell.tabIndex = i === focused ? 0 : -1;

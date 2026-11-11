@@ -224,6 +224,7 @@ function renderBoard(values: number[], cages: Cage[]) {
   const beforeStep = currentStep ? (walkthroughPosition > 1 ? history[walkthroughPosition - 2].after : initialGrid) : undefined;
   cells.forEach((cell, i) => {
     const cage = cageForCell.get(i);
+    cell.dataset.cageOperation = cage?.operation ?? 'sum';
     const revealedOperation=cage?.operation==='psycho' ? operations.get(Math.min(...cage.cells)) : undefined;
     cell.replaceChildren();
     const digit = document.createElement('span');

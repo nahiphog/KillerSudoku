@@ -91,6 +91,7 @@ function card(record: SimulationRecord) {
       const index=row*9+col, cell=tr.insertCell(), cage=owners.get(index);
       cell.setAttribute('aria-label',`Row ${row+1}, column ${col+1}, ${cage ? `cage ${cage.operation ?? 'sum'} ${cage.sum}, ${cage.cells.length} cells` : 'no cage'}`);
       if(!cage) continue;
+      cell.dataset.cageOperation=cage.operation ?? 'sum';
       const outline=document.createElement('span'); outline.className='cage-outline'; outline.setAttribute('aria-hidden','true');
       const edges={top:row===0||owners.get(index-9)!==cage,bottom:row===8||owners.get(index+9)!==cage,left:col===0||owners.get(index-1)!==cage,right:col===8||owners.get(index+1)!==cage};
       for(const [edge,boundary] of Object.entries(edges)) {outline.style.setProperty(edge,boundary?'4px':'-1px');if(boundary)outline.classList.add('cage-'+edge);}
