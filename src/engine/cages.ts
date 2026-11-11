@@ -4,7 +4,7 @@ export type CageOperation = 'sum' | 'product' | 'psycho';
 export type CageArithmetic = CageOperation | 'mixed';
 export interface Cage { cells: number[]; sum: number; operation?: CageOperation }
 export interface CageOptions { sizes?: readonly number[]; symmetric?: boolean; requiredSizes?: readonly number[]; operation?: CageArithmetic }
-export const DEFAULT_CAGE_SIZES = [2, 3, 4, 5, 6, 7];
+export const DEFAULT_CAGE_SIZES = [2, 3];
 
 export function cageSymbol(operation?: CageOperation): string { return operation === 'psycho' ? '' : operation === 'product' ? '×' : '+'; }
 export function createCage(cells: number[], values: ArrayLike<number>, operation: CageOperation = 'sum', random = Math.random): Cage {
