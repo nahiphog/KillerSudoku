@@ -1,3 +1,4 @@
+import { importButton, setupGridImport } from './gridImportDialog';
 import { exportControls, setupGridExport, visibleGrid } from './gridExport';
 import { generationTimer } from './generationTimer';
 import { customEntryGrid } from './engine/customEntries';
@@ -14,7 +15,7 @@ import { scoredTally } from './engine/techniqueScores';
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   ${header.replace('<button id="about"', '<button id="open-settings" type="button" aria-haspopup="dialog">Settings</button><button id="about"')}
-  <div class="generation-toolbar"><div class="generation-actions"><button id="generate" type="button">↻ Generate</button><fieldset id="retained-cage-sizes"><legend>Allowed cells per cage</legend>${Array.from({length:8},(_,i)=>i+2).map(size=>`<label>${size} cells <select name="cage-size" data-size="${size}" aria-label="${size}-cell cages"><option value="none">None</option><option value="required" ${DEFAULT_CAGE_SIZES.includes(size) ? 'selected' : ''}>At least 1</option></select></label>`).join('')}</fieldset><label class="symmetry-option"><input id="dig-cages" type="checkbox" checked> Dig cages after generation</label><label class="symmetry-option"><input id="dig-pairs" type="checkbox" checked> Dig cages in pairs</label><label class="symmetry-option"><input id="logic-only" type="checkbox" checked title="Applies to the next generated puzzle. Every cell must be solvable with logical techniques; digging must preserve this complete solve."> Require a complete logical solve</label></div><p id="generation-live" role="timer" hidden></p><dl id="generation-summary" aria-label="Generated puzzle details" hidden></dl></div>
+  <div class="generation-toolbar"><div class="generation-actions"><button id="generate" type="button">↻ Generate</button>${importButton}<fieldset id="retained-cage-sizes"><legend>Allowed cells per cage</legend>${Array.from({length:8},(_,i)=>i+2).map(size=>`<label>${size} cells <select name="cage-size" data-size="${size}" aria-label="${size}-cell cages"><option value="none">None</option><option value="required" ${DEFAULT_CAGE_SIZES.includes(size) ? 'selected' : ''}>At least 1</option></select></label>`).join('')}</fieldset><label class="symmetry-option"><input id="dig-cages" type="checkbox" checked> Dig cages after generation</label><label class="symmetry-option"><input id="dig-pairs" type="checkbox" checked> Dig cages in pairs</label><label class="symmetry-option"><input id="logic-only" type="checkbox" checked title="Applies to the next generated puzzle. Every cell must be solvable with logical techniques; digging must preserve this complete solve."> Require a complete logical solve</label></div><p id="generation-live" role="timer" hidden></p><dl id="generation-summary" aria-label="Generated puzzle details" hidden></dl></div>
   <main>
     <div class="workspace generation-workspace">
       <section class="board-panel" aria-labelledby="board-title">
@@ -80,6 +81,7 @@ let worker: Worker | null = null;
 let solution: number[] | null = null;
 let activeCages: Cage[] = [];
 let exportedCageFreeCells: number[] = [];
+let restoredNotes: number[] | null = null;
 let initialGrid = startSolver();
 let solvingGrid = startSolver();
 let revealSolution = false;
@@ -98,6 +100,7 @@ const updateExportControls = setupGridExport(document.querySelector<HTMLElement>
 updateExportControls(false);
 function updateSolverControls() {
   const busy = !!worker;
+  document.querySelector<HTMLButtonElement>('#open-import')!.disabled = busy;
   updateExportControls(!!solution && !busy);
   digToggle.disabled = busy;
   retainedCageSizes.disabled = busy;
@@ -228,7 +231,7 @@ function renderBoard(values: number[], cages: Cage[]) {
     if (supporting.length) cell.setAttribute('aria-label', cell.getAttribute('aria-label') + ', supporting digits: ' + supporting.join(', '));
     if (!revealSolution && !values[i] && (candidateToggle.checked || removed.length > 0 || supporting.length > 0)) {
       const notes = document.createElement('span'); notes.className = 'cell-candidates';
-      const candidates = digitsOf(candidateToggle.checked ? solvingGrid.cands[i] : 0);
+      const candidates = digitsOf(candidateToggle.checked ? (walkthroughPosition === 0 && restoredNotes ? restoredNotes[i] : solvingGrid.cands[i]) : 0);
       for (let d = 1; d <= 9; d++) {
         const mark = document.createElement('span');
         mark.dataset.cell = String(i); mark.dataset.digit = String(d);
@@ -344,6 +347,7 @@ function acceptPuzzle(puzzle: VerifiedPuzzle, custom = false) {
     group.append(term, detail); summary.append(group);
   }
   document.body.classList.toggle('dug-grid-page', !!digging && !custom);
+  restoredNotes = puzzle.entries?.notes ?? null;
   exportedCageFreeCells = puzzle.cageFreeCells ?? [];
   solution = values; activeCages = cages; initialGrid = customEntryGrid(puzzle.entries, cages.map(c => c.cells)); resetSolving(deductions); revealSolution = false; candidateToggle.checked = !!puzzle.entries?.notes.some(Boolean);
   paint();
@@ -362,3 +366,10 @@ if (new URLSearchParams(location.search).get('custom') === '1') {
     status.textContent = 'Unable to load the custom puzzle. Return to Custom Build and generate a new puzzle.';
   }
 }
+
+setupGridImport(puzzle=>{
+  acceptPuzzle(puzzle,true);
+  document.querySelector('#board-title')!.textContent='Imported grid';
+  document.querySelector('#badge')!.textContent='IMPORTED · '+puzzle.cages.length+' CAGES';
+  document.querySelector('#status')!.textContent='Imported grid · verified unique solution · '+puzzle.proofSteps+' walkthrough steps.';
+});
