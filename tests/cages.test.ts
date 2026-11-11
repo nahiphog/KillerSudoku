@@ -82,7 +82,7 @@ describe('cage generation', () => {
 
   it('rejects impossible selections rather than silently using other sizes', () => {
     const grid = generateFullGrid(seededRandom(3));
-    for (const sizes of [[], [2], [2, 4, 6, 8], [5], [7], [1], [10]]) {
+    for (const sizes of [[], [2], [2, 4, 6, 8], [5], [7], [0], [10]]) {
       expect(cageOptionsError({ sizes })).not.toBeNull();
       expect(() => generateCages(grid.values, { sizes })).toThrow();
     }

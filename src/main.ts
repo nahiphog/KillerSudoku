@@ -15,7 +15,7 @@ import { scoredTally } from './engine/techniqueScores';
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   ${header.replace('<button id="about"', '<button id="open-settings" type="button" aria-haspopup="dialog">Settings</button><button id="about"')}
-  <div class="generation-toolbar"><div class="generation-actions"><button id="generate" type="button">↻ Generate</button>${importButton}<label class="symmetry-option">Cage arithmetic <select id="cage-operation" aria-label="Cage arithmetic"><option value="sum">Sum</option><option value="product">Product</option></select></label><fieldset id="retained-cage-sizes"><legend>Allowed cells per cage</legend>${Array.from({length:8},(_,i)=>i+2).map(size=>`<label>${size} cells <select name="cage-size" data-size="${size}" aria-label="${size}-cell cages"><option value="none">None</option><option value="required" ${DEFAULT_CAGE_SIZES.includes(size) ? 'selected' : ''}>At least 1</option></select></label>`).join('')}</fieldset><label class="symmetry-option"><input id="dig-cages" type="checkbox" checked> Dig cages after generation</label><label class="symmetry-option"><input id="dig-pairs" type="checkbox" checked> Dig cages in pairs</label><label class="symmetry-option"><input id="logic-only" type="checkbox" checked title="Applies to the next generated puzzle. Every cell must be solvable with logical techniques; digging must preserve this complete solve."> Require a complete logical solve</label></div><p id="generation-live" role="timer" hidden></p><dl id="generation-summary" aria-label="Generated puzzle details" hidden></dl></div>
+  <div class="generation-toolbar"><div class="generation-actions"><button id="generate" type="button">↻ Generate</button>${importButton}<label class="symmetry-option">Cage arithmetic <select id="cage-operation" aria-label="Cage arithmetic"><option value="sum">Sum</option><option value="product">Product</option></select></label><fieldset id="retained-cage-sizes"><legend>Allowed cells per cage</legend>${Array.from({length:9},(_,i)=>i+1).map(size=>`<label>${size} ${size === 1 ? 'cell' : 'cells'} <select name="cage-size" data-size="${size}" aria-label="${size}-cell cages"><option value="none">None</option><option value="required" ${DEFAULT_CAGE_SIZES.includes(size) ? 'selected' : ''}>At least 1</option></select></label>`).join('')}</fieldset><label class="symmetry-option"><input id="dig-cages" type="checkbox" checked> Dig cages after generation</label><label class="symmetry-option"><input id="dig-pairs" type="checkbox" checked> Dig cages in pairs</label><label class="symmetry-option" title="Remove every 1-cell cage, overriding its retention minimum. Retry until the remaining puzzle meets the solution requirements."><input id="dig-singletons" type="checkbox"> Dig out all 1-cell cages</label><label class="symmetry-option"><input id="logic-only" type="checkbox" checked title="Applies to the next generated puzzle. Every cell must be solvable with logical techniques; digging must preserve this complete solve."> Require a complete logical solve</label></div><p id="generation-live" role="timer" hidden></p><dl id="generation-summary" aria-label="Generated puzzle details" hidden></dl></div>
   <main>
     <div class="workspace generation-workspace">
       <section class="board-panel" aria-labelledby="board-title">
@@ -61,6 +61,7 @@ settingsDialog.addEventListener('click', event => {
 });
 const button = document.querySelector<HTMLButtonElement>('#generate')!;
 const retainedCageSizes = document.querySelector<HTMLFieldSetElement>('#retained-cage-sizes')!;
+const singletonToggle = document.querySelector<HTMLInputElement>('#dig-singletons')!;
 const pairToggle = document.querySelector<HTMLInputElement>('#dig-pairs')!;
 const settings = document.querySelector<HTMLFieldSetElement>('#settings')!;
 const digToggle = document.querySelector<HTMLInputElement>('#dig-cages')!;
@@ -106,6 +107,7 @@ function updateSolverControls() {
   document.querySelector<HTMLButtonElement>('#edit-custom')!.disabled = !editablePuzzle || busy;
   document.querySelector<HTMLSelectElement>('#cage-operation')!.disabled = busy;
   digToggle.disabled = busy;
+  singletonToggle.disabled = busy || !digToggle.checked || !selectedCageSizes().includes(1);
   retainedCageSizes.disabled = busy;
   logicOnlyToggle.disabled = busy;
   pairToggle.disabled = busy || !digToggle.checked || !document.querySelector<HTMLInputElement>('#symmetry')!.checked;
@@ -181,6 +183,7 @@ nextButton.addEventListener('click', () => seekWalkthrough(walkthroughPosition +
 const selectedCageSizes = () => [...document.querySelectorAll<HTMLSelectElement>('select[name="cage-size"]')].filter(input=>input.value === 'required').map(input=>Number(input.dataset.size));
 const options = (): PuzzleOptions => ({
   dig: digToggle.checked,
+  digSingletons: singletonToggle.checked,
   operation: document.querySelector<HTMLSelectElement>('#cage-operation')!.value as 'sum'|'product',
   retainedCageSizes: selectedCageSizes(),
   logicOnly: logicOnlyToggle.checked,
@@ -208,6 +211,7 @@ function cancelGeneration() {
 }
 settings.addEventListener('change', validate);
 digToggle.addEventListener('change', validate);
+singletonToggle.addEventListener('change', validate);
 retainedCageSizes.addEventListener('change', validate);
 function renderBoard(values: number[], cages: Cage[]) {
   const cageForCell = new Map(cages.flatMap(cage => cage.cells.map(cell => [cell, cage] as const)));

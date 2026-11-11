@@ -1,4 +1,4 @@
-import { digCages, solveKillerBySearch, type DigProgress } from './digging';
+import { countKillerSolutions, digCages, solveKillerBySearch, type DigProgress } from './digging';
 import type { ManualBoard } from './manualPlay';
 import { bit, cloneGrid, type Grid } from '../vendor/sudokui/board';
 import { generateFullGrid } from './generator';
@@ -7,12 +7,13 @@ import { applyDeduction, nextKillerStep, startSolver, type Deduction } from './k
 import { techniqueDifficulty, techniqueRank, type Difficulty } from './difficulty';
 
 export interface LogicalProof { values: number[]; complete: boolean; steps: number; difficulty: Difficulty; hardestTechnique: string; deductions: Deduction[]; techniqueTally: Record<string, number> }
-export type PuzzleOptions = CageOptions & { dig?: boolean; digPairs?: boolean; logicOnly?: boolean; retainedCageSizes?: readonly number[] };
+export type PuzzleOptions = CageOptions & { dig?: boolean; digPairs?: boolean; digSingletons?: boolean; logicOnly?: boolean; retainedCageSizes?: readonly number[] };
 
 export function retainedCageSizesError(options: PuzzleOptions): string | null {
   const required = options.retainedCageSizes ?? [];
-  if (required.some(size => !Number.isInteger(size) || size < 2 || size > 9)) return 'Retained cage sizes must be between 2 and 9; cages cannot contain repeated digits.';
+  if (required.some(size => !Number.isInteger(size) || size < 1 || size > 9)) return 'Retained cage sizes must be between 1 and 9; cages cannot contain repeated digits.';
   if (required.some(size => !(options.sizes ?? DEFAULT_CAGE_SIZES).includes(size))) return 'Enable every required cage size in Allowed cells per cage.';
+  if (options.dig && options.digSingletons && (options.sizes ?? DEFAULT_CAGE_SIZES).every(size => size === 1)) return 'Allow larger cages to remove all 1-cell cages while preserving a unique solution.';
   return null;
 }
 
@@ -74,7 +75,8 @@ export function generateVerifiedPuzzle(options: PuzzleOptions, limits: Generatio
   const sizes = options.sizes ?? DEFAULT_CAGE_SIZES;
   if (sizes.every(size => size === 9)) throw new Error('Nine-cell cages all contain digits 1–9 and cannot give a unique puzzle. Allow smaller cage sizes.');
   const requiredSizes = options.retainedCageSizes ?? [];
-  const hasRequiredCage = (cages: Cage[]) => requiredSizes.every(size => cages.some(cage => cage.cells.length === size));
+  const retainedSizes = requiredSizes.filter(size => !(options.dig && options.digSingletons && size === 1));
+  const hasRequiredCage = (cages: Cage[]) => retainedSizes.every(size => cages.some(cage => cage.cells.length === size));
   const random = limits.random ?? Math.random;
   const started = performance.now();
   const deadline = Date.now() + (limits.maxMilliseconds ?? 45000);
@@ -98,11 +100,24 @@ export function generateVerifiedPuzzle(options: PuzzleOptions, limits: Generatio
         const candidateProof = proveLogically(trial, digDeadline);
         return !!candidateProof && candidateProof.values.every((value, i) => value === grid.values[i]);
       };
-      const result = digCages(cages, random, digDeadline, limits.onDigProgress, Array.from(grid.values),
+      // Remove every singleton atomically; reject candidates that lose solvability.
+      const initialCount = cages.length;
+      if (options.digSingletons) {
+        const trial = cages.filter(cage => cage.cells.length !== 1);
+        if (trial.length !== cages.length) {
+          if ((requireLogicalSolve && !preservesLogicalSolve(trial))
+            || countKillerSolutions(trial, digDeadline, Array.from(grid.values)) !== 1) continue;
+          cages = trial;
+        }
+      }
+      const singletonRemovals = initialCount - cages.length;
+      const includeSingletons = (progress: DigProgress): DigProgress => ({ paired: progress.paired, pass: progress.pass,
+        tested: progress.tested + singletonRemovals, total: initialCount, removed: progress.removed + singletonRemovals });
+      const result = digCages(cages, random, digDeadline, progress => limits.onDigProgress?.(includeSingletons(progress)), Array.from(grid.values),
         (options.digPairs ?? true) && options.symmetric !== false,
         requireLogicalSolve || requiredSizes.length ? trial => hasRequiredCage(trial) && (!requireLogicalSolve || preservesLogicalSolve(trial)) : undefined);
       cages = result.cages;
-      digging = { tested: result.tested, total: result.total, removed: result.removed, paired: result.paired };
+      digging = includeSingletons(result);
       proof = requireLogicalSolve ? proveLogically(cages, digDeadline) : traceLogically(cages, digDeadline, true);
       if (!proof) throw new Error('Unable to finish the dug puzzle walkthrough within the time limit. Try again.');
     }

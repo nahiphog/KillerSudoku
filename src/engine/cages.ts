@@ -23,7 +23,7 @@ function totals(sizes: readonly number[]): boolean[] {
 export function cageOptionsError(options: CageOptions): string | null {
   const sizes = options.sizes ?? DEFAULT_CAGE_SIZES;
   if (!sizes.length) return 'Select at least one cage size.';
-  if (sizes.some(s => !Number.isInteger(s) || s < 2 || s > 9)) return 'Cage sizes must be between 2 and 9.';
+  if (sizes.some(s => !Number.isInteger(s) || s < 1 || s > 9)) return 'Cage sizes must be between 1 and 9.';
   const possible = totals(sizes);
   if (!possible[81]) return 'These cage sizes cannot cover 81 cells. Include another size.';
   if ((options.symmetric ?? true) && !sizes.some(s => s % 2 === 1 && possible[(81 - s) / 2])) {
@@ -77,11 +77,12 @@ export function generateCages(values: ArrayLike<number>, optionsOrRandom: CageOp
     const anchor = central ? 40 : Math.min(...free);
     const seen = new Set<string>();
     const targetSizes = shuffle(sizes.filter(s => !central || s % 2 === 1));
-    if (preferSmall && random() < 0.9) targetSizes.sort((a, b) => a - b);
+    const sizePriority = (size: number) => size === 1 ? 10 : size;
+    if (preferSmall && random() < 0.9) targetSizes.sort((a, b) => sizePriority(a) - sizePriority(b));
     // Place missing required sizes early, then favor smaller cages for useful clues.
     if (options.requiredSizes?.length) {
       const missing = options.requiredSizes.filter(size => !groups.some(group => group.length === size));
-      targetSizes.sort((a, b) => Number(missing.includes(b)) - Number(missing.includes(a)) || (missing.includes(a) ? b - a : a - b));
+      targetSizes.sort((a, b) => Number(missing.includes(b)) - Number(missing.includes(a)) || (missing.includes(a) ? b - a : sizePriority(a) - sizePriority(b)));
     }
     function grow(shape: number[], target: number): boolean {
       if (--budget <= 0) return false;
