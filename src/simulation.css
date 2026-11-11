@@ -2,6 +2,12 @@
 #simulation-inputs { display: flex; flex-wrap: wrap; gap: 22px; margin-bottom: 20px; }
 #simulation-inputs > label { display: flex; align-items: center; gap: 10px; font-size: 14px; }
 #simulation-inputs select { padding: 9px; border: 1px solid #b4bfb3; border-radius: 6px; font: inherit; background: white; }
+#simulation-generation { width: 100%; display: flex; flex-wrap: wrap; gap: 18px; border-top: 1px solid #dddfd5; padding-top: 18px; }
+#simulation-generation > label { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+#simulation-generation > p { width: 100%; margin: 0; color: #657160; font-size: 13px; line-height: 1.6; }
+#simulation-cage-sizes { width: 100%; display: flex; flex-wrap: wrap; gap: 14px; margin: 0; }
+#simulation-cage-sizes label { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+#simulation-error { color: #8c2828; }
 #run-simulation { width: auto; }
 #simulation-progress { font-variant-numeric: tabular-nums; line-height: 1.7; }
 .histogram-panel { background: white; border: 1px solid #dddfd5; padding: 24px; border-radius: 12px; margin: 26px 0; }

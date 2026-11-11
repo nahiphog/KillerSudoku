@@ -1,10 +1,10 @@
-import { generateVerifiedPuzzle } from './verifiedGenerator';
+import { generateVerifiedPuzzle, type PuzzleOptions } from './verifiedGenerator';
 import { simulationResult } from './simulation';
 
 // One request per trial lets the page store and display each result before continuing.
-self.onmessage = () => {
+self.onmessage = (event: MessageEvent<PuzzleOptions>) => {
   try {
-    const puzzle = generateVerifiedPuzzle({ dig: true, digPairs: true, symmetric: true, logicOnly: false }, {
+    const puzzle = generateVerifiedPuzzle(event.data, {
       onProgress: attempt => self.postMessage({ attempt }),
     });
     self.postMessage({ result: simulationResult(puzzle) });
