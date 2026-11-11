@@ -3,7 +3,7 @@ import type { ManualBoard } from './manualPlay';
 import { bit, cloneGrid, type Grid } from '../vendor/sudokui/board';
 import { generateFullGrid } from './generator';
 import { cageOptionsError, DEFAULT_CAGE_SIZES, generateCages, type Cage, type CageOptions } from './cages';
-import { applyDeduction, nextKillerStep, startSolver, type Deduction } from './killerSolver';
+import { applyDeduction, nextKillerStep, psychoOperationSteps, startSolver, type Deduction } from './killerSolver';
 import { techniqueDifficulty, techniqueRank, type Difficulty } from './difficulty';
 
 export interface LogicalProof { values: number[]; complete: boolean; steps: number; difficulty: Difficulty; hardestTechnique: string; deductions: Deduction[]; techniqueTally: Record<string, number> }
@@ -26,8 +26,14 @@ export function traceLogically(cages: Cage[], deadline = Infinity, allowBruteFor
   let hardestTechnique = 'Cage combinations';
   const deductions: Deduction[] = [];
   const techniqueTally: Record<string, number> = {};
+  const revealedOperations = new Set<number>();
   for (let steps = 0; steps <= 810; steps++) {
     if (Date.now() >= deadline) return null;
+    for(const explanation of psychoOperationSteps(grid,cages,revealedOperations)) {
+      revealedOperations.add(explanation.cageOperation!.cell);
+      deductions.push(explanation);
+      techniqueTally['Cage operation']=(techniqueTally['Cage operation'] ?? 0)+1;
+    }
     let result = nextKillerStep(grid, cages);
     if (result.status === 'stalled' && allowBruteForce) {
       searchedSolution ??= solveKillerBySearch(cages, grid, deadline);
@@ -40,7 +46,7 @@ export function traceLogically(cages: Cage[], deadline = Infinity, allowBruteFor
         placements: [{cell, digit}], eliminations: [], cells: [cell], supportCells: [], supportDigits: [],
       } };
     }
-    if (result.status === 'solved' || result.status === 'stalled') return { complete: result.status === 'solved', values: Array.from(grid.values), steps, difficulty: hardestTechnique === 'Brute Force' ? 'Expert' : techniqueDifficulty(hardestTechnique), hardestTechnique, deductions, techniqueTally };
+    if (result.status === 'solved' || result.status === 'stalled') return { complete: result.status === 'solved', values: Array.from(grid.values), steps: deductions.length, difficulty: hardestTechnique === 'Brute Force' ? 'Expert' : techniqueDifficulty(hardestTechnique), hardestTechnique, deductions, techniqueTally };
     if (result.status !== 'step') return null;
     const step = result.step;
     if (step.technique === 'Brute Force' || (hardestTechnique !== 'Brute Force' && techniqueRank(step.technique) > techniqueRank(hardestTechnique))) hardestTechnique = step.technique;

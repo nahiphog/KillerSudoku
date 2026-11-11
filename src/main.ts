@@ -7,7 +7,7 @@ import './cages.css';
 import { cageOptionsError, DEFAULT_CAGE_SIZES, type Cage, type CageArithmetic, cageSymbol } from './engine/cages';
 import { retainedCageSizesError, type PuzzleOptions, type VerifiedPuzzle } from './engine/verifiedGenerator';
 import { header, footer, setupAbout } from './shell';
-import { applyDeduction, startSolver, type Deduction } from './engine/killerSolver';
+import { applyDeduction, revealedCageOperations, startSolver, type Deduction } from './engine/killerSolver';
 import { cellName, digitsOf, type Grid } from './vendor/sudokui/board';
 import './solver.css';
 import { drawWalkthroughLinks } from './walkthroughLinks';
@@ -160,6 +160,7 @@ function renderWalkthrough() {
   const removed = new Map<number, number[]>();
   for (const { cell, digit } of current.step.eliminations) removed.set(cell, [...(removed.get(cell) ?? []), digit]);
   changes.textContent = [
+    ...(current.step.cageOperation ? ['Identify the cage at '+cellName(current.step.cageOperation.cell)+' as '+current.step.cageOperation.operation] : []),
     ...current.step.placements.map(p => 'Place ' + p.digit + ' in ' + cellName(p.cell)),
     ...[...removed].map(([cell, digits]) => 'Remove ' + digits.join(', ') + ' from ' + cellName(cell)),
   ].join('; ') + '.';
@@ -218,10 +219,12 @@ singletonToggle.addEventListener('change', validate);
 retainedCageSizes.addEventListener('change', validate);
 function renderBoard(values: number[], cages: Cage[]) {
   const cageForCell = new Map(cages.flatMap(cage => cage.cells.map(cell => [cell, cage] as const)));
+  const operations=revealedCageOperations(history.map(item=>item.step),walkthroughPosition);
   const currentStep = !revealSolution ? history[walkthroughPosition - 1]?.step : undefined;
   const beforeStep = currentStep ? (walkthroughPosition > 1 ? history[walkthroughPosition - 2].after : initialGrid) : undefined;
   cells.forEach((cell, i) => {
     const cage = cageForCell.get(i);
+    const revealedOperation=cage?.operation==='psycho' ? operations.get(Math.min(...cage.cells)) : undefined;
     cell.replaceChildren();
     const digit = document.createElement('span');
     digit.className = 'cell-digit';
@@ -236,6 +239,7 @@ function renderBoard(values: number[], cages: Cage[]) {
     const removed = beforeStep && !values[i] ? digitsOf(beforeStep.cands[i] & ~solvingGrid.cands[i]) : [];
     cell.append(digit);
     cell.setAttribute('aria-label', `Row ${Math.floor(i / 9) + 1}, column ${i % 9 + 1}, ${values[i] || 'empty'}, ${cage ? `cage ${cage.operation ?? 'sum'} ${cage.sum}, ${cage.cells.length} cells` : 'no cage'}`);
+    if(revealedOperation)cell.setAttribute('aria-label',cell.getAttribute('aria-label')+', deduced '+revealedOperation+' operation');
     cell.classList.toggle('deduction-cell', !revealSolution && !!history[walkthroughPosition - 1]?.step.cells.includes(i));
     if (placed) cell.setAttribute('aria-label', cell.getAttribute('aria-label') + ', placed this step');
     if (currentStep?.supportCells.includes(i)) cell.setAttribute('aria-label', cell.getAttribute('aria-label') + ', supporting cell');
@@ -273,7 +277,8 @@ function renderBoard(values: number[], cages: Cage[]) {
     if (cage.cells[0] === i) {
       const label = document.createElement('span');
       label.className = 'cage-sum';
-      label.textContent = String(cage.sum) + cageSymbol(cage.operation);
+      label.textContent = String(cage.sum) + cageSymbol(revealedOperation ?? cage.operation);
+      if(revealedOperation)label.title='Deduced '+revealedOperation+' operation';
       if(cage.sum>=10000) label.style.fontSize='10px';
       label.setAttribute('aria-hidden', 'true');
       cell.append(label);

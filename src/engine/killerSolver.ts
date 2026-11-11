@@ -15,6 +15,7 @@ export interface Deduction {
   supportCells: number[];
   supportDigits: { cell: number; digit: number }[];
   links?: ChainLink[];
+  cageOperation?: { cell: number; operation: 'sum' | 'product' };
 }
 export type SolverResult =
   | { status: 'step'; step: Deduction }
@@ -69,6 +70,36 @@ export function cageSupports(grid: Grid, cage: Cage): { combinations: number[][]
     });
   }
   return { combinations, supports };
+}
+
+/** Explanations derived only from the current board, never the generated answer. */
+export function psychoOperationSteps(grid: Grid, cages: Cage[], revealed: ReadonlySet<number>): Deduction[] {
+  return cages.flatMap(cage => {
+    const anchor=Math.min(...cage.cells);
+    if(cage.operation!=='psycho'||revealed.has(anchor))return [];
+    const sum=cageSupports(grid,{...cage,operation:'sum'});
+    const product=cageSupports(grid,{...cage,operation:'product'});
+    if(!!sum.combinations.length===!!product.combinations.length)return [];
+    const operation = sum.combinations.length ? 'sum' as const : 'product' as const;
+    const rejected = operation==='sum' ? 'product' : 'sum';
+    const surviving = operation==='sum' ? sum : product;
+    const rejectedSets=(rejected==='sum'?tables:productTables).get(cage.cells.length)?.find(row=>row.sum===cage.sum)?.combinations ?? [];
+    const format=(sets:number[][])=>sets.map(digits=>'{'+digits.join(', ')+'}').join('; ');
+    const evidence=cage.cells.map(cell=>cellName(cell)+(grid.values[cell]?' = '+grid.values[cell]:' candidates {'+digitsOf(grid.cands[cell]).join(', ')+'}')).join('; ');
+    const reason=rejectedSets.length
+      ? `The ${rejected} digit sets for ${cage.sum} are ${format(rejectedSets)}. None can be assigned to these cells while respecting their placed digits, candidates and the no-repeat rule (${evidence}).`
+      : `There is no set of ${cage.cells.length} distinct digits from 1–9 whose ${rejected} is ${cage.sum}, so ${rejected} is impossible even before considering cell candidates.`;
+    return [{technique:'Cage operation',description:`Cage at ${cellName(anchor)} with clue ${cage.sum} is a ${operation} cage. ${reason} The ${operation} interpretation still has compatible sets: ${format(surviving.combinations)}. Therefore the clue means ${operation==='sum'?'addition (+)':'multiplication (×)'}.`,
+      placements:[],eliminations:[],cells:cage.cells,supportCells:cage.cells,
+      supportDigits:cage.cells.flatMap((cell,index)=>digitsOf(surviving.supports[index]).map(digit=>({cell,digit}))),
+      cageOperation:{cell:anchor,operation}}];
+  });
+}
+
+export function revealedCageOperations(steps: readonly Deduction[], position: number): Map<number, 'sum' | 'product'> {
+  const operations=new Map<number,'sum'|'product'>();
+  for(const step of steps.slice(0,Math.max(0,position)))if(step.cageOperation)operations.set(step.cageOperation.cell,step.cageOperation.operation);
+  return operations;
 }
 
 export function nextKillerStep(grid: Grid, cages: Cage[]): SolverResult {
