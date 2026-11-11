@@ -4,7 +4,7 @@ import { generationTimer } from './generationTimer';
 import { customEntryGrid } from './engine/customEntries';
 import './style.css';
 import './cages.css';
-import { cageOptionsError, DEFAULT_CAGE_SIZES, type Cage } from './engine/cages';
+import { cageOptionsError, DEFAULT_CAGE_SIZES, type Cage, type CageArithmetic, cageSymbol } from './engine/cages';
 import { retainedCageSizesError, type PuzzleOptions, type VerifiedPuzzle } from './engine/verifiedGenerator';
 import { header, footer, setupAbout } from './shell';
 import { applyDeduction, startSolver, type Deduction } from './engine/killerSolver';
@@ -16,7 +16,7 @@ import { readSimulationWalkthrough } from './simulationWalkthrough';
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   ${header.replace('<button id="about"', '<button id="open-settings" type="button" aria-haspopup="dialog">Settings</button><button id="about"')}
-  <div class="generation-toolbar"><div class="generation-actions"><button id="generate" type="button">↻ Generate</button>${importButton}<label class="symmetry-option">Cage arithmetic <select id="cage-operation" aria-label="Cage arithmetic"><option value="sum">Sum</option><option value="product">Product</option></select></label><fieldset id="retained-cage-sizes"><legend>Allowed cells per cage</legend>${Array.from({length:9},(_,i)=>i+1).map(size=>`<label>${size} ${size === 1 ? 'cell' : 'cells'} <select name="cage-size" data-size="${size}" aria-label="${size}-cell cages"><option value="none">None</option><option value="required" ${DEFAULT_CAGE_SIZES.includes(size) ? 'selected' : ''}>At least 1</option></select></label>`).join('')}</fieldset><label class="symmetry-option"><input id="dig-cages" type="checkbox" checked> Dig cages after generation</label><label class="symmetry-option"><input id="dig-pairs" type="checkbox" checked> Dig cages in pairs</label><label class="symmetry-option" title="Remove every 1-cell cage, overriding its retention minimum. Retry until the remaining puzzle meets the solution requirements."><input id="dig-singletons" type="checkbox"> Dig out all 1-cell cages</label><label class="symmetry-option"><input id="logic-only" type="checkbox" checked title="Applies to the next generated puzzle. Every cell must be solvable with logical techniques; digging must preserve this complete solve."> Require a complete logical solve</label></div><p id="generation-live" role="timer" hidden></p><dl id="generation-summary" aria-label="Generated puzzle details" hidden></dl></div>
+  <div class="generation-toolbar"><div class="generation-actions"><button id="generate" type="button">↻ Generate</button>${importButton}<label class="symmetry-option">Cage arithmetic <select id="cage-operation" aria-label="Cage arithmetic"><option value="sum">Sum</option><option value="product">Product</option><option value="mixed">Sum + Product</option><option value="psycho">Psycho</option></select></label><fieldset id="retained-cage-sizes"><legend>Allowed cells per cage</legend>${Array.from({length:9},(_,i)=>i+1).map(size=>`<label>${size} ${size === 1 ? 'cell' : 'cells'} <select name="cage-size" data-size="${size}" aria-label="${size}-cell cages"><option value="none">None</option><option value="required" ${DEFAULT_CAGE_SIZES.includes(size) ? 'selected' : ''}>At least 1</option></select></label>`).join('')}</fieldset><label class="symmetry-option"><input id="dig-cages" type="checkbox" checked> Dig cages after generation</label><label class="symmetry-option"><input id="dig-pairs" type="checkbox" checked> Dig cages in pairs</label><label class="symmetry-option" title="Remove every 1-cell cage, overriding its retention minimum. Retry until the remaining puzzle meets the solution requirements."><input id="dig-singletons" type="checkbox"> Dig out all 1-cell cages</label><label class="symmetry-option"><input id="logic-only" type="checkbox" checked title="Applies to the next generated puzzle. Every cell must be solvable with logical techniques; digging must preserve this complete solve."> Require a complete logical solve</label></div><p id="generation-live" role="timer" hidden></p><dl id="generation-summary" aria-label="Generated puzzle details" hidden></dl></div>
   <main>
     <div class="workspace generation-workspace">
       <section class="board-panel" aria-labelledby="board-title">
@@ -186,7 +186,7 @@ const selectedCageSizes = () => [...document.querySelectorAll<HTMLSelectElement>
 const options = (): PuzzleOptions => ({
   dig: digToggle.checked,
   digSingletons: singletonToggle.checked,
-  operation: document.querySelector<HTMLSelectElement>('#cage-operation')!.value as 'sum'|'product',
+  operation: document.querySelector<HTMLSelectElement>('#cage-operation')!.value as CageArithmetic,
   retainedCageSizes: selectedCageSizes(),
   logicOnly: logicOnlyToggle.checked,
   digPairs: pairToggle.checked,
@@ -273,8 +273,8 @@ function renderBoard(values: number[], cages: Cage[]) {
     if (cage.cells[0] === i) {
       const label = document.createElement('span');
       label.className = 'cage-sum';
-      label.textContent = String(cage.sum) + (cage.operation === 'product' ? '×' : '+');
-      if(cage.operation === 'product' && cage.sum>=10000) label.style.fontSize='10px';
+      label.textContent = String(cage.sum) + cageSymbol(cage.operation);
+      if(cage.sum>=10000) label.style.fontSize='10px';
       label.setAttribute('aria-hidden', 'true');
       cell.append(label);
     }

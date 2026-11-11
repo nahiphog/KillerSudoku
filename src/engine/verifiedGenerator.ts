@@ -76,7 +76,8 @@ export function generateVerifiedPuzzle(options: PuzzleOptions, limits: Generatio
   if (sizes.every(size => size === 9)) throw new Error('Nine-cell cages all contain digits 1–9 and cannot give a unique puzzle. Allow smaller cage sizes.');
   const requiredSizes = options.retainedCageSizes ?? [];
   const retainedSizes = requiredSizes.filter(size => !(options.dig && options.digSingletons && size === 1));
-  const hasRequiredCage = (cages: Cage[]) => retainedSizes.every(size => cages.some(cage => cage.cells.length === size));
+  const hasRequiredCage = (cages: Cage[]) => retainedSizes.every(size => cages.some(cage => cage.cells.length === size))
+    && (options.operation !== 'mixed' || (cages.some(c=>(c.operation ?? 'sum')==='sum') && cages.some(c=>c.operation==='product')));
   const random = limits.random ?? Math.random;
   const started = performance.now();
   const deadline = Date.now() + (limits.maxMilliseconds ?? 45000);
@@ -105,7 +106,7 @@ export function generateVerifiedPuzzle(options: PuzzleOptions, limits: Generatio
       if (options.digSingletons) {
         const trial = cages.filter(cage => cage.cells.length !== 1);
         if (trial.length !== cages.length) {
-          if ((requireLogicalSolve && !preservesLogicalSolve(trial))
+          if (!hasRequiredCage(trial) || (requireLogicalSolve && !preservesLogicalSolve(trial))
             || countKillerSolutions(trial, digDeadline, Array.from(grid.values)) !== 1) continue;
           cages = trial;
         }
@@ -115,7 +116,7 @@ export function generateVerifiedPuzzle(options: PuzzleOptions, limits: Generatio
         tested: progress.tested + singletonRemovals, total: initialCount, removed: progress.removed + singletonRemovals });
       const result = digCages(cages, random, digDeadline, progress => limits.onDigProgress?.(includeSingletons(progress)), Array.from(grid.values),
         (options.digPairs ?? true) && options.symmetric !== false,
-        requireLogicalSolve || requiredSizes.length ? trial => hasRequiredCage(trial) && (!requireLogicalSolve || preservesLogicalSolve(trial)) : undefined);
+        requireLogicalSolve || requiredSizes.length || options.operation === 'mixed' ? trial => hasRequiredCage(trial) && (!requireLogicalSolve || preservesLogicalSolve(trial)) : undefined);
       cages = result.cages;
       digging = includeSingletons(result);
       proof = requireLogicalSolve ? proveLogically(cages, digDeadline) : traceLogically(cages, digDeadline, true);

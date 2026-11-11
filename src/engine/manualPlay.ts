@@ -27,6 +27,15 @@ export function manualStatus(board: ManualBoard, cages: Cage[]): { conflicts: Se
     for (const cell of unit) if (board.values[cell] && unit.some(other => other !== cell && board.values[other] === board.values[cell])) conflicts.add(cell);
   }
   for (const cage of cages) {
+    if(cage.operation === 'psycho') {
+      const values=cage.cells.map(cell=>board.values[cell]);
+      const sum=values.reduce((a,b)=>a+b,0), product=values.reduce((a,b)=>a*(b||1),1);
+      const full=values.every(Boolean);
+      const sumPossible=full ? sum===cage.sum : sum<cage.sum;
+      const productPossible=product<=cage.sum && (full ? product===cage.sum : cage.sum%product===0);
+      if(!sumPossible&&!productPossible)cage.cells.filter(cell=>board.values[cell]).forEach(cell=>conflicts.add(cell));
+      continue;
+    }
     const sum = cage.cells.reduce((total, cell) => cage.operation === 'product' ? total * (board.values[cell] || 1) : total + board.values[cell], cage.operation === 'product' ? 1 : 0);
     const full = cage.cells.every(cell => board.values[cell] !== 0);
     if (sum > cage.sum || (full && sum !== cage.sum) || (!full && (cage.operation === 'product' ? cage.sum % sum !== 0 : sum === cage.sum))) {

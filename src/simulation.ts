@@ -6,7 +6,7 @@ import { HISTOGRAM_EDGES, TRIAL_COUNTS, RATING_THRESHOLDS, histogramBin, matches
 import { simulationStore } from './simulationStore';
 import { serializeGrid } from './gridExport';
 import { simulationWalkthroughUrl } from './simulationWalkthrough';
-import { cageOptionsError, DEFAULT_CAGE_SIZES, type CageOperation } from './engine/cages';
+import { cageOptionsError, DEFAULT_CAGE_SIZES, type CageArithmetic, cageSymbol } from './engine/cages';
 import { retainedCageSizesError, type PuzzleOptions } from './engine/verifiedGenerator';
 
 document.querySelector('#app')!.innerHTML = `${header}<main class="simulation-page">
@@ -15,7 +15,7 @@ document.querySelector('#app')!.innerHTML = `${header}<main class="simulation-pa
   <label>Display grids with difficulty ratings of at least <select id="minimum">${RATING_THRESHOLDS.map(n=>`<option value="${n}">${n.toLocaleString()}</option>`).join('')}</select></label>
   <label class="symmetry-option"><input type="checkbox" id="no-brute-force" checked> Display only grids that do not use brute force</label>
   <fieldset id="simulation-generation"><legend>Generation settings</legend>
-    <label>Cage arithmetic <select id="cage-operation"><option value="sum">Sum</option><option value="product">Product</option></select></label>
+    <label>Cage arithmetic <select id="cage-operation"><option value="sum">Sum</option><option value="product">Product</option><option value="mixed">Sum + Product</option><option value="psycho">Psycho</option></select></label>
     <fieldset id="simulation-cage-sizes"><legend>Allowed cells per cage</legend>${Array.from({length:9},(_,i)=>i+1).map(size=>`<label>${size} ${size===1?'cell':'cells'} <select name="cage-size" data-size="${size}" aria-label="${size}-cell cages"><option value="none">None</option><option value="required" ${DEFAULT_CAGE_SIZES.includes(size)?'selected':''}>At least 1</option></select></label>`).join('')}</fieldset>
     <label class="symmetry-option"><input type="checkbox" id="symmetry" checked> Rotationally symmetric cages</label>
     <label class="symmetry-option"><input type="checkbox" id="dig-cages" checked> Dig cages after generation</label>
@@ -42,7 +42,7 @@ let bins = Array<number>(HISTOGRAM_EDGES.length - 1).fill(0);
 const PAGE_SIZE = 6;
 function generationOptions(): PuzzleOptions {
   const sizes=[...document.querySelectorAll<HTMLSelectElement>('#simulation-cage-sizes select')].filter(select=>select.value==='required').map(select=>Number(select.dataset.size));
-  return {sizes,retainedCageSizes:sizes,operation:el<HTMLSelectElement>('cage-operation').value as CageOperation,
+  return {sizes,retainedCageSizes:sizes,operation:el<HTMLSelectElement>('cage-operation').value as CageArithmetic,
     symmetric:el<HTMLInputElement>('symmetry').checked,dig:el<HTMLInputElement>('dig-cages').checked,
     digPairs:el<HTMLInputElement>('dig-pairs').checked,digSingletons:el<HTMLInputElement>('dig-singletons').checked,
     logicOnly:el<HTMLInputElement>('logic-only').checked};
@@ -95,7 +95,7 @@ function card(record: SimulationRecord) {
       const edges={top:row===0||owners.get(index-9)!==cage,bottom:row===8||owners.get(index+9)!==cage,left:col===0||owners.get(index-1)!==cage,right:col===8||owners.get(index+1)!==cage};
       for(const [edge,boundary] of Object.entries(edges)) {outline.style.setProperty(edge,boundary?'4px':'-1px');if(boundary)outline.classList.add('cage-'+edge);}
       cell.append(outline);
-      if(index===Math.min(...cage.cells)) {const clue=document.createElement('span');clue.className='cage-sum';clue.textContent=cage.sum+(cage.operation==='product'?'×':'+');if(cage.operation==='product'&&cage.sum>=10000)clue.style.fontSize='10px';cell.append(clue);}
+      if(index===Math.min(...cage.cells)) {const clue=document.createElement('span');clue.className='cage-sum';clue.textContent=cage.sum+cageSymbol(cage.operation);if(cage.sum>=10000)clue.style.fontSize='10px';cell.append(clue);}
     }
   }
   article.append(board);

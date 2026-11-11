@@ -1,7 +1,7 @@
 import { customEntryGrid } from './customEntries';
 import type { ManualBoard } from './manualPlay';
 import { bit, cloneGrid, digitsOf, emptyGrid, setValue, type Grid } from '../vendor/sudokui/board';
-import { orthogonalNeighbors, type Cage, type CageOperation } from './cages';
+import { orthogonalNeighbors, createCage, type Cage, type CageOperation } from './cages';
 import { countKillerSolutions } from './digging';
 import { traceLogically, type GenerationLimits, type VerifiedPuzzle } from './verifiedGenerator';
 
@@ -77,7 +77,7 @@ export function generateCustomPuzzle(groups: number[][], limits: GenerationLimit
     const grid = fillLayout(groups, limits.random ?? Math.random, deadline, initial);
     if (!grid) continue;
     const values = Array.from(grid.values);
-    const cages: Cage[] = groups.map((cells,index) => ({ cells: [...cells].sort((a, b) => a - b), sum: cells.reduce((total, cell) => operations[index] === 'product' ? total * values[cell] : total + values[cell], operations[index] === 'product' ? 1 : 0), ...(operations[index] === 'product' ? {operation:'product' as const} : {}) }));
+    const cages: Cage[] = groups.map((cells,index) => createCage(cells,values,operations[index],limits.random ?? Math.random));
     // A difficult candidate must not consume the entire search allowance.
     let count: number;
     try { count = countKillerSolutions(cages, Math.min(deadline, Date.now() + 2000), values, initial); }

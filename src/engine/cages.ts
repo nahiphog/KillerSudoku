@@ -1,9 +1,17 @@
 import { UNITS } from '../vendor/sudokui/board';
 
-export type CageOperation = 'sum' | 'product';
+export type CageOperation = 'sum' | 'product' | 'psycho';
+export type CageArithmetic = CageOperation | 'mixed';
 export interface Cage { cells: number[]; sum: number; operation?: CageOperation }
-export interface CageOptions { sizes?: readonly number[]; symmetric?: boolean; requiredSizes?: readonly number[]; operation?: CageOperation }
+export interface CageOptions { sizes?: readonly number[]; symmetric?: boolean; requiredSizes?: readonly number[]; operation?: CageArithmetic }
 export const DEFAULT_CAGE_SIZES = [2, 3, 4, 5, 6, 7];
+
+export function cageSymbol(operation?: CageOperation): string { return operation === 'psycho' ? '' : operation === 'product' ? '×' : '+'; }
+export function createCage(cells: number[], values: ArrayLike<number>, operation: CageOperation = 'sum', random = Math.random): Cage {
+  const product = operation === 'product' || (operation === 'psycho' && random() < 0.5);
+  return {cells:cells.slice().sort((a,b)=>a-b),sum:cells.reduce((total,cell)=>product ? total*values[cell] : total+values[cell],product?1:0),
+    ...(operation !== 'sum' ? {operation} : {})};
+}
 
 export function orthogonalNeighbors(cell: number): number[] {
   const neighbors: number[] = [];
@@ -115,11 +123,15 @@ export function generateCages(values: ArrayLike<number>, optionsOrRandom: CageOp
     }
     return targetSizes.some(size => grow([anchor], size));
   }
-  const finish = (partition: number[][]) => partition.map(cells => ({
-    cells: cells.slice().sort((a, b) => a - b),
-    sum: cells.reduce((total, i) => options.operation === 'product' ? total * values[i] : total + values[i], options.operation === 'product' ? 1 : 0),
-    ...(options.operation === 'product' ? {operation: 'product' as const} : {}),
-  })).sort((a, b) => a.cells[0] - b.cells[0]);
+  const finish = (partition: number[][]) => {
+    const operations: CageOperation[] = partition.map(()=>options.operation === 'mixed' ? (random()<0.5?'sum':'product') : options.operation ?? 'sum');
+    if(options.operation === 'mixed') {
+      if(partition.length<2)throw new Error('Sum + Product requires at least two cages.');
+      if(!operations.includes('sum'))operations[0]='sum';
+      if(!operations.includes('product'))operations[operations.length-1]='product';
+    }
+    return partition.map((cells,i)=>createCage(cells,values,operations[i],random)).sort((a,b)=>a.cells[0]-b.cells[0]);
+  };
   if (search()) return finish(groups);
   // Guaranteed valid layouts when these sizes were explicitly selected.
   const stripe = sizes.includes(3) ? 3 : sizes.includes(9) ? 9 : null;

@@ -30,12 +30,12 @@ export function parseGridString(text: string) {
   const cages: Cage[]=data.cages.map((cage: unknown)=>{
     if(!object(cage)) throw new Error('Invalid cage.');
     const operation = cage.operation ?? 'sum';
-    if(operation !== 'sum' && operation !== 'product') throw new Error('Invalid cage operation.');
-    const target = operation === 'product' ? cage.product : cage.sum;
+    if(operation !== 'sum' && operation !== 'product' && operation !== 'psycho') throw new Error('Invalid cage operation.');
+    const target = operation === 'psycho' ? cage.target : operation === 'product' ? cage.product : cage.sum;
     if(target===null) throw new Error('This is an unfinished custom layout without cage sums. Generate its sums before copying a grid for the walkthrough.');
     const cells=cellList(cage.cells).sort((a,b)=>a-b), n=cells.length;
     if(n<1 || n>9 || typeof target!=='number' || !Number.isInteger(target) || !(n===1 ? target>=1 && target<=9 : combinationTable(n,operation).some(row=>row.sum===target))) throw new Error('A cage target is invalid for its operation and distinct digits.');
-    return {cells,sum:target,...(operation === 'product' ? {operation: 'product' as const} : {})};
+    return {cells,sum:target,...(operation === 'psycho' ? {operation: 'psycho' as const} : operation === 'product' ? {operation: 'product' as const} : {})};
   });
   const cageFreeCells=data.cageFreeCells===undefined ? [] : cellList(data.cageFreeCells);
   const layoutError=cageFreeCellsError(cages.map(c=>c.cells),cageFreeCells) ?? (cages.length ? customLayoutError(cages.map(c=>c.cells)) : null);

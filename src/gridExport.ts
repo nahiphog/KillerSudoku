@@ -1,7 +1,7 @@
 import type { Cage } from './engine/cages';
 
 export interface ExportGrid {
-  cages: { cells: number[]; sum: number | null; operation?: 'sum' | 'product' }[];
+  cages: { cells: number[]; sum: number | null; operation?: 'sum' | 'product' | 'psycho' }[];
   values: number[];
   notes: number[][];
   cageFreeCells?: number[];
@@ -15,7 +15,7 @@ export function serializeGrid(grid: ExportGrid): string {
   return JSON.stringify({
     format: 'killer-sudoku', version: 1, size: 9,
     digits: grid.values.join(''),
-    cages: grid.cages.map(cage => ({ ...(cage.operation === 'product' ? {operation:'product',product:cage.sum} : {sum:cage.sum}), cells: [...cage.cells].sort((a,b)=>a-b).map(address) })),
+    cages: grid.cages.map(cage => ({ ...(cage.operation === 'psycho' ? {operation:'psycho',target:cage.sum} : cage.operation === 'product' ? {operation:'product',product:cage.sum} : {sum:cage.sum}), cells: [...cage.cells].sort((a,b)=>a-b).map(address) })),
     notes: Object.fromEntries(grid.notes.flatMap((digits, cell) => digits.length ? [[address(cell), digits]] : [])),
     uncagedCells: Array.from({length:81},(_,i)=>i).filter(cell=>!covered.has(cell)).map(address),
     cageFreeCells: (grid.cageFreeCells ?? []).map(address),

@@ -1,7 +1,7 @@
 import type { ManualBoard } from './manualPlay';
 import { generateCustomPuzzle } from './customBuilder';
 
-self.onmessage = (event: MessageEvent<{ groups: number[][]; entries: ManualBoard; cageFreeCells?: number[]; operations?: ('sum'|'product')[] }>) => {
+self.onmessage = (event: MessageEvent<{ groups: number[][]; entries: ManualBoard; cageFreeCells?: number[]; operations?: ('sum'|'product'|'psycho')[] }>) => {
   try {
     self.postMessage({ puzzle: generateCustomPuzzle(event.data.groups, {
       maxMilliseconds: Infinity,
