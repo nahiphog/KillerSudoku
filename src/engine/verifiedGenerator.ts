@@ -7,7 +7,15 @@ import { applyDeduction, nextKillerStep, startSolver, type Deduction } from './k
 import { techniqueDifficulty, techniqueRank, type Difficulty } from './difficulty';
 
 export interface LogicalProof { values: number[]; complete: boolean; steps: number; difficulty: Difficulty; hardestTechnique: string; deductions: Deduction[]; techniqueTally: Record<string, number> }
-export type PuzzleOptions = CageOptions & { dig?: boolean; digPairs?: boolean; logicOnly?: boolean };
+export type PuzzleOptions = CageOptions & { dig?: boolean; digPairs?: boolean; logicOnly?: boolean; minimumCageSize?: number };
+
+export function minimumCageSizeError(options: PuzzleOptions): string | null {
+  if (!options.dig || !options.minimumCageSize) return null;
+  const minimum = options.minimumCageSize;
+  if (!Number.isInteger(minimum) || minimum < 2 || minimum > 9) return 'Cages cannot contain 10 or 11 cells without repeating a digit. Choose 2–9.';
+  if (!(options.sizes ?? DEFAULT_CAGE_SIZES).some(size => size >= minimum)) return `Allow at least one cage size of ${minimum} or more in Settings.`;
+  return null;
+}
 
 /** Logical traces prove uniqueness when complete without search. Optional
  * search fallback is reserved for walkthroughs of already verified puzzles;
@@ -62,10 +70,12 @@ export interface GenerationLimits {
 
 /** Only a fully certified puzzle can leave this function. */
 export function generateVerifiedPuzzle(options: PuzzleOptions, limits: GenerationLimits = {}): VerifiedPuzzle {
-  const error = cageOptionsError(options);
+  const error = cageOptionsError(options) ?? minimumCageSizeError(options);
   if (error) throw new Error(error);
   const sizes = options.sizes ?? DEFAULT_CAGE_SIZES;
   if (sizes.every(size => size === 9)) throw new Error('Nine-cell cages all sum to 45 and cannot give a unique puzzle. Allow smaller cage sizes.');
+  const minimum = options.dig ? options.minimumCageSize ?? 0 : 0;
+  const hasRequiredCage = (cages: Cage[]) => !minimum || cages.some(cage => cage.cells.length >= minimum);
   const random = limits.random ?? Math.random;
   const started = performance.now();
   const deadline = Date.now() + (limits.maxMilliseconds ?? 45000);
@@ -76,8 +86,9 @@ export function generateVerifiedPuzzle(options: PuzzleOptions, limits: Generatio
     limits.onProgress?.(attempt);
     const grid = generateFullGrid(random);
     let cages: Cage[];
-    try { cages = generateCages(grid.values, canUseSmall && attempt % 5 !== 0 ? smallOptions : options, random, attempt % 3 === 0); }
+    try { cages = generateCages(grid.values, canUseSmall && minimum <= 3 && attempt % 5 !== 0 ? smallOptions : options, random, attempt % 3 === 0); }
     catch { continue; }
+    if (!hasRequiredCage(cages)) continue;
     let proof = proveLogically(cages, deadline);
     if (!proof || proof.values.some((value, i) => value !== grid.values[i])) continue;
     let digging: DigProgress | undefined;
@@ -89,7 +100,8 @@ export function generateVerifiedPuzzle(options: PuzzleOptions, limits: Generatio
         return !!candidateProof && candidateProof.values.every((value, i) => value === grid.values[i]);
       };
       const result = digCages(cages, random, digDeadline, limits.onDigProgress, Array.from(grid.values),
-        (options.digPairs ?? true) && options.symmetric !== false, requireLogicalSolve ? preservesLogicalSolve : undefined);
+        (options.digPairs ?? true) && options.symmetric !== false,
+        requireLogicalSolve || minimum ? trial => hasRequiredCage(trial) && (!requireLogicalSolve || preservesLogicalSolve(trial)) : undefined);
       cages = result.cages;
       digging = { tested: result.tested, total: result.total, removed: result.removed, paired: result.paired };
       proof = requireLogicalSolve ? proveLogically(cages, digDeadline) : traceLogically(cages, digDeadline, true);

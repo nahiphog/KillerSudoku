@@ -94,3 +94,8 @@
 #generation-summary dd { font-size: clamp(25px, 3vw, 34px); }
 #generation-live { font-size: 20px; font-variant-numeric: tabular-nums; width: 100%; }
 #generation-live[hidden] { display: none; }
+
+/* Dug puzzles use the available viewport width, including wide displays. */
+.dug-grid-page main { max-width: none; margin-inline: 20px; }
+.dug-grid-page .generation-workspace .grid-frame { width: 100%; }
+.generation-actions select { padding: 7px; border: 1px solid #bbc8b8; border-radius: 5px; background: white; color: inherit; font: inherit; }

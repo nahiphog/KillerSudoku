@@ -1,11 +1,26 @@
 import { describe, expect, it } from 'vitest';
 import { countKillerSolutions, digCages, cageDigGroups } from '../src/engine/digging';
-import { generateVerifiedPuzzle, proveLogically } from '../src/engine/verifiedGenerator';
+import { generateVerifiedPuzzle, proveLogically, minimumCageSizeError } from '../src/engine/verifiedGenerator';
 import { applyDeduction, nextKillerStep, startSolver } from '../src/engine/killerSolver';
 import { UNITS } from '../src/vendor/sudokui/board';
 const rng = (seed: number) => () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
 
 describe('exact cage digging', () => {
+  it('validates the retained cage minimum against digits and allowed sizes', () => {
+    expect(minimumCageSizeError({dig:true, minimumCageSize:10})).toContain('cannot contain');
+    expect(minimumCageSizeError({dig:true, minimumCageSize:11})).toContain('cannot contain');
+    expect(minimumCageSizeError({dig:true, minimumCageSize:8})).toContain('Settings');
+    expect(minimumCageSizeError({dig:false, minimumCageSize:8})).toBeNull();
+    expect(minimumCageSizeError({dig:true, minimumCageSize:8, sizes:[2,3,8]})).toBeNull();
+    expect(()=>generateVerifiedPuzzle({dig:true, minimumCageSize:10})).toThrow('cannot contain');
+  });
+  it.each([true, false])('retains a cage of at least four cells with logic-only %s', logicOnly => {
+    const puzzle = generateVerifiedPuzzle({dig:true, minimumCageSize:4, logicOnly}, {random:rng(3), maxDigMilliseconds:120000});
+    expect(puzzle.cages.some(cage=>cage.cells.length>=4)).toBe(true);
+    expect(puzzle.digging!.removed).toBeGreaterThan(0);
+    expect(countKillerSolutions(puzzle.cages)).toBe(1);
+    if(logicOnly) expect(puzzle.logicallySolved).toBe(true);
+  },180000);
   it('distinguishes impossible and ambiguous puzzles and rejects expired checks', () => {
     expect(countKillerSolutions([{ cells: [0, 1], sum: 2 }])).toBe(0);
     expect(countKillerSolutions([])).toBe(2);
