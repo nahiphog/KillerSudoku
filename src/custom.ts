@@ -1,3 +1,4 @@
+import { exportControls, setupGridExport, visibleGrid } from './gridExport';
 import { customEntryGrid } from './engine/customEntries';
 import { digitsOf } from './vendor/sudokui/board';
 import { generationTimer } from './generationTimer';
@@ -13,7 +14,7 @@ document.querySelector('#app')!.innerHTML = `${header}
 <main><section class="intro"><p class="eyebrow">YOUR SHAPES, A NEW CHALLENGE</p><h1>Custom Build</h1><p class="toolkit-intro">Start with an empty grid. Select cells that share edges and add them as a cage. We’ll search for cage sums that give your exact layout a unique solution.</p></section>
 <div class="workspace"><section class="board-panel"><div class="panel-heading"><h2>Your cage layout</h2><span class="badge" id="coverage"></span></div>
 <table class="board custom-board" role="grid" aria-label="Custom cage layout" aria-describedby="build-help"><tbody>${Array.from({ length: 9 }, (_, r) => `<tr>${Array.from({ length: 9 }, (_, c) => `<td role="gridcell" tabindex="${r + c === 0 ? 0 : -1}" data-cell="${r * 9 + c}"></td>`).join('')}</tr>`).join('')}</tbody></table>
-<div class="board-footer"><p id="selection-status" role="status"></p></div></section>
+<div class="board-footer"><p id="selection-status" role="status"></p></div>${exportControls}</section>
 <aside><section class="entry-panel"><h2>Cell entries</h2><div class="entry-modes" aria-label="Build mode"><button type="button" data-mode="cages" aria-pressed="true">Cages</button><button type="button" data-mode="digits" aria-pressed="false">Digits</button><button type="button" data-mode="notes" aria-pressed="false">Snyder notations</button><button type="button" data-mode="cage-free" aria-pressed="false">Cage-free cells</button></div><p>Choose Digits or Snyder notations, then select a cell and enter 1–9. P toggles notations. Delete or Backspace erases. Notations list every allowed digit; an empty cell is unrestricted.</p><p>Choose Cage-free cells and click cells (or press Space) to toggle × tags. Tagged cells stay outside every cage; digits and notations are still allowed. Remove an existing cage before tagging its cells.</p><div class="custom-number-pad"><button type="button" data-digit="1">1</button><button type="button" data-digit="2">2</button><button type="button" data-digit="3">3</button><button type="button" data-digit="4">4</button><button type="button" data-digit="5">5</button><button type="button" data-digit="6">6</button><button type="button" data-digit="7">7</button><button type="button" data-digit="8">8</button><button type="button" data-digit="9">9</button><button type="button" id="erase-cell">Erase</button></div><p id="entry-status" role="status"></p><p id="entry-error" class="error" role="alert"></p></section><section class="generate-panel"><h2>Define your cages</h2><p id="build-help">Click or tap cells to select them; click again to deselect. Use arrow keys to move and Space to select. Each cage holds 1–9 connected cells with no repeated digits. Select an existing cage to edit it.</p>
 <div class="build-actions"><button id="save-cage">Add cage</button><button id="clear-selection">Clear selection</button><button id="delete-cage" hidden>Delete cage</button></div>
 <p id="layout-error" class="error" role="alert"></p><p id="cage-count"></p><p>Unassigned cells follow ordinary Sudoku rules. Sums are generated automatically. Some layouts may not yield a unique puzzle.</p>
@@ -36,8 +37,10 @@ let puzzle: VerifiedPuzzle | null = null;
 const status = element('build-status');
 const liveTimer = generationTimer(element('build-live'));
 
+const updateExportControls = setupGridExport(document.querySelector<HTMLElement>('.custom-board')!, () => visibleGrid(document.querySelector<HTMLElement>('.custom-board')!, puzzle?.cages ?? groups.map(cells=>({cells,sum:null})), [...cageFreeCells]));
 function invalidate() { puzzle = null; element('play').hidden = true; status.textContent = 'Entries or layout changed. Generate to search for matching sums.'; }
 function render() {
+  updateExportControls(!worker);
   const owners = new Map(groups.flatMap((group, index) => group.map(cell => [cell, index] as const)));
   cells.forEach((cell, i) => {
     const owner = owners.get(i);

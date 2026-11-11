@@ -1,3 +1,4 @@
+import { exportControls, setupGridExport, visibleGrid } from './gridExport';
 import { generationTimer } from './generationTimer';
 import { customEntryGrid } from './engine/customEntries';
 import './style.css';
@@ -27,7 +28,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 </div>
         </div>
         <div class="board-footer"><span class="status-dot" aria-hidden="true"></span><p id="status" role="status" aria-live="polite">Generate a grid with cages to get started.</p></div>
-        <div class="board-actions"><button id="toggle-solution" type="button" disabled>Hide solution</button><label><input id="show-candidates" type="checkbox" disabled> Show candidates</label></div>
+        ${exportControls}<div class="board-actions"><button id="toggle-solution" type="button" disabled>Hide solution</button><label><input id="show-candidates" type="checkbox" disabled> Show candidates</label></div>
       </section>
       <aside>
         <section id="deduction-panel" class="solver-panel" aria-label="Current deduction" hidden>
@@ -78,6 +79,7 @@ let generation = 0;
 let worker: Worker | null = null;
 let solution: number[] | null = null;
 let activeCages: Cage[] = [];
+let exportedCageFreeCells: number[] = [];
 let initialGrid = startSolver();
 let solvingGrid = startSolver();
 let revealSolution = false;
@@ -92,8 +94,11 @@ const undoButton = document.querySelector<HTMLButtonElement>('#undo-step')!;
 const resetButton = document.querySelector<HTMLButtonElement>('#reset-solver')!;
 const solverMessage = document.querySelector('#solver-message')!;
 const historyList = document.querySelector<HTMLOListElement>('#step-history')!;
+const updateExportControls = setupGridExport(document.querySelector<HTMLElement>('.board')!, () => visibleGrid(document.querySelector<HTMLElement>('.board')!, activeCages, exportedCageFreeCells));
+updateExportControls(false);
 function updateSolverControls() {
   const busy = !!worker;
+  updateExportControls(!!solution && !busy);
   digToggle.disabled = busy;
   retainedCageSizes.disabled = busy;
   logicOnlyToggle.disabled = busy;
@@ -339,6 +344,7 @@ function acceptPuzzle(puzzle: VerifiedPuzzle, custom = false) {
     group.append(term, detail); summary.append(group);
   }
   document.body.classList.toggle('dug-grid-page', !!digging && !custom);
+  exportedCageFreeCells = puzzle.cageFreeCells ?? [];
   solution = values; activeCages = cages; initialGrid = customEntryGrid(puzzle.entries, cages.map(c => c.cells)); resetSolving(deductions); revealSolution = false; candidateToggle.checked = !!puzzle.entries?.notes.some(Boolean);
   paint();
   generation++;
