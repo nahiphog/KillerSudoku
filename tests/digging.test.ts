@@ -16,7 +16,7 @@ describe('exact cage digging', () => {
     expect(()=>generateVerifiedPuzzle({dig:true, retainedCageSizes:[10]})).toThrow('between 1 and 9');
   });
   it.each([true, false])('retains every selected exact cage size with logic-only %s', logicOnly => {
-    const puzzle = generateVerifiedPuzzle({dig:true, retainedCageSizes:[2,3,4], logicOnly}, {random:rng(3), maxDigMilliseconds:120000});
+    const puzzle = generateVerifiedPuzzle({dig:true, sizes:[2,3,4,5,6,7], retainedCageSizes:[2,3,4], logicOnly}, {random:rng(3), maxDigMilliseconds:120000});
     for(const size of [2,3,4]) expect(puzzle.cages.some(cage=>cage.cells.length===size)).toBe(true);
     expect(puzzle.digging!.removed).toBeGreaterThan(0);
     expect(countKillerSolutions(puzzle.cages)).toBe(1);
