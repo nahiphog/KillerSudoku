@@ -1,0 +1,23 @@
+.simulation-page > p, .histogram-panel > p { line-height: 1.6; color: #657160; }
+#simulation-inputs { display: flex; flex-wrap: wrap; gap: 22px; margin-bottom: 20px; }
+#simulation-inputs > label { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+#simulation-inputs select { padding: 9px; border: 1px solid #b4bfb3; border-radius: 6px; font: inherit; background: white; }
+#run-simulation { width: auto; }
+#simulation-progress { font-variant-numeric: tabular-nums; line-height: 1.7; }
+.histogram-panel { background: white; border: 1px solid #dddfd5; padding: 24px; border-radius: 12px; margin: 26px 0; }
+#histogram { overflow-x: auto; }
+#histogram svg { width: 100%; min-width: 750px; display: block; font: 12px 'DM Sans', sans-serif; fill: #233c35; }
+#histogram table { border-collapse: collapse; margin-top: 12px; }
+#histogram td, #histogram th { padding: 5px 15px; text-align: left; border-bottom: 1px solid #dddfd5; }
+.simulation-paging { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 20px; }
+.simulation-paging button { width: auto; margin: 0; }
+#simulation-grids { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,440px),1fr)); gap: 24px; }
+.simulation-card { min-width: 0; background: #fffefb; padding: 18px; border: 1px solid #dddfd5; border-radius: 12px; }
+.simulation-card h3 { margin-top: 0; }
+.simulation-card dl { display: flex; flex-wrap: wrap; gap: 16px; }
+.simulation-card dt { font-size: 12px; color: #657160; }
+.simulation-card dd { margin: 5px 0 0; font-size: 17px; }
+.simulation-card .board { display: grid; grid-template-columns: repeat(9,minmax(0,1fr)); width: min(100%,540px); aspect-ratio: 1; margin: auto; }
+.simulation-card .board tbody, .simulation-card .board tr { display: contents; }
+.simulation-card .board td { width: auto; min-width: 0; aspect-ratio: 1; }
+.simulation-card > button { width: auto; padding: 10px 14px; }
