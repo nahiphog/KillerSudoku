@@ -4,9 +4,12 @@
 .cage-panel .hint { font-size: 11px; margin-bottom: 0; }
 button:disabled { opacity: .45; cursor: not-allowed; transform: none; }
 .board td { position: relative; background: #fff; }
-.board td { --cage-color: #7739a5; }
-.board td[data-cage-operation="product"] { --cage-color: #c62828; }
-.board td[data-cage-operation="psycho"] { --cage-color: #000; }
+.board td, .cage-legend span { --cage-color: #7739a5; }
+.board td[data-cage-operation="product"], .cage-legend [data-cage-operation="product"] { --cage-color: #c62828; }
+.board td[data-cage-operation="psycho"], .cage-legend [data-cage-operation="psycho"] { --cage-color: #000; }
+.cage-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 14px; margin: 10px auto; font: 400 11px/1.5 'DM Sans', sans-serif; color: #526058; }
+.cage-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.cage-legend i { width: 16px; flex: 0 0 16px; border-top: 2px dashed var(--cage-color); }
 .cage-outline { position: absolute; pointer-events: none; z-index: 1; border-color: var(--cage-color); border-style: dashed; border-width: 0; }
 .cage-outline.cage-top { border-top-width: 2px; }
 .cage-outline.cage-bottom { border-bottom-width: 2px; }

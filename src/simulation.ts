@@ -1,4 +1,5 @@
 import './style.css';
+import { cageLegend } from './cageLegend';
 import './cages.css';
 import './simulation.css';
 import { header, footer, setupAbout } from './shell';
@@ -100,6 +101,7 @@ function card(record: SimulationRecord) {
     }
   }
   article.append(board);
+  article.insertAdjacentHTML('beforeend',cageLegend);
   const walkthrough=document.createElement('a');walkthrough.className='simulation-walkthrough';
   walkthrough.textContent='Open solution walkthrough';walkthrough.href=simulationWalkthroughUrl(record);
   walkthrough.target='_blank';walkthrough.rel='noopener';walkthrough.setAttribute('aria-label',`Open solution walkthrough for trial ${record.trial} (new tab)`);
