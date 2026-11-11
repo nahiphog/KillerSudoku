@@ -21,9 +21,9 @@ button:disabled { opacity: .45; cursor: not-allowed; transform: none; }
 .site-header { flex-wrap: wrap; gap: 16px; }
 .site-header nav { display: flex; flex-wrap: wrap; align-items: center; gap: 22px; font-size: 13px; }
 .site-header nav a { text-underline-offset: 4px; }
-.site-header nav .generate-nav { display: inline-flex; padding: 9px 16px; border-radius: 7px; background: #2f503d; color: #fff; font-weight: 600; text-decoration: none; }
-.site-header nav .generate-nav:hover { background: #223d2d; }
-.site-header nav .generate-nav:focus-visible { outline: 3px solid #a0b86e; outline-offset: 4px; }
+.site-header nav select { width: auto; max-width: 100%; margin: 0; padding: 9px 16px; border: 0; border-radius: 7px; background: #2f503d; color: #fff; font: 600 14px 'DM Sans', sans-serif; cursor: pointer; }
+.site-header nav select:hover { background: #223d2d; }
+.site-header nav select:focus-visible { outline: 3px solid #a0b86e; outline-offset: 4px; }
 .site-header nav button { width: auto; margin: 0; padding: 9px 16px; }
 fieldset { border: 0; margin: 22px 0 0; padding: 0; min-width: 0; }
 legend { font-size: 13px; font-weight: 700; margin-bottom: 14px; }

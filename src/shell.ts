@@ -1,7 +1,7 @@
 export const header = `
 <header class="site-header">
   <a class="brand" href="./"><span class="brand-icon" aria-hidden="true">▦</span> Killer Sudoku</a>
-  <nav aria-label="Main navigation"><a class="generate-nav" href="./#generate">Generate</a><a href="./custom.html">Custom Build</a><a href="./techniques.html">Techniques</a><a href="./combinations.html">Combinations</a><button id="about" type="button">About</button></nav>
+  <nav aria-label="Main navigation"><select id="page-navigation" aria-label="Pages"><option value="./#generate">Generate</option><option value="./custom.html">Custom Build</option><option value="./techniques.html">Techniques</option><option value="./combinations.html">Combinations</option></select><button id="about" type="button">About</button></nav>
 </header>`;
 export const footer = `
 <footer><span>Built one possibility at a time.</span><span>Solving engine adapted from <a href="https://github.com/AImenes/sudokUI" target="_blank" rel="noreferrer">sudokUI</a> · GPL-3.0</span></footer>
@@ -14,6 +14,10 @@ export const footer = `
   <form method="dialog"><button autofocus>Close</button></form>
 </dialog>`;
 export function setupAbout() {
+  const navigation = document.querySelector<HTMLSelectElement>('#page-navigation')!;
+  const currentPage = location.pathname.split('/').pop();
+  navigation.value = ['custom.html', 'techniques.html', 'combinations.html'].includes(currentPage ?? '') ? `./${currentPage}` : './#generate';
+  navigation.addEventListener('change', () => { location.href = navigation.value; });
   const dialog = document.querySelector<HTMLDialogElement>('#about-dialog')!;
   document.querySelector('#about')!.addEventListener('click', () => dialog.showModal());
   dialog.addEventListener('click', event => { if (event.target === dialog) {
