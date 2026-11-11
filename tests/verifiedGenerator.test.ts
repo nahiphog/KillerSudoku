@@ -8,6 +8,11 @@ function rng(seed: number) {
 }
 
 describe('verified puzzle generation', () => {
+  it('enforces required sizes even without digging and excludes disabled sizes', () => {
+    const puzzle = generateVerifiedPuzzle({sizes:[2,3],retainedCageSizes:[2,3],dig:false},{random:rng(1)});
+    expect(new Set(puzzle.cages.map(cage=>cage.cells.length))).toEqual(new Set([2,3]));
+    expect(puzzle.logicallySolved).toBe(true);
+  },60000);
   it('rejects ambiguous nine-cell row cages and incomplete proofs', () => {
     const cages = UNITS.slice(0, 9).map(cells => ({ cells, sum: 45 }));
     expect(proveLogically(cages)).toBeNull();

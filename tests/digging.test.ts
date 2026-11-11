@@ -9,10 +9,10 @@ describe('exact cage digging', () => {
   it('validates the retained cage minimum against digits and allowed sizes', () => {
     expect(retainedCageSizesError({dig:true, retainedCageSizes:[10]})).toContain('between 2 and 9');
     expect(retainedCageSizesError({dig:true, retainedCageSizes:[11]})).toContain('between 2 and 9');
-    expect(retainedCageSizesError({dig:true, retainedCageSizes:[8]})).toContain('Settings');
-    expect(retainedCageSizesError({dig:false, retainedCageSizes:[8]})).toBeNull();
+    expect(retainedCageSizesError({dig:true, retainedCageSizes:[8]})).toContain('Allowed cells');
+    expect(retainedCageSizesError({dig:false, retainedCageSizes:[8]})).toContain('Allowed cells');
     expect(retainedCageSizesError({dig:true, retainedCageSizes:[8], sizes:[2,3,8]})).toBeNull();
-    expect(retainedCageSizesError({dig:true, retainedCageSizes:[4], sizes:[2,3,5]})).toContain('Settings');
+    expect(retainedCageSizesError({dig:true, retainedCageSizes:[4], sizes:[2,3,5]})).toContain('Allowed cells');
     expect(()=>generateVerifiedPuzzle({dig:true, retainedCageSizes:[10]})).toThrow('between 2 and 9');
   });
   it.each([true, false])('retains every selected exact cage size with logic-only %s', logicOnly => {

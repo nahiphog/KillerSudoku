@@ -17,7 +17,7 @@ document.querySelector('#app')!.innerHTML = `${header}
 <aside><section class="entry-panel"><h2>Cell entries</h2><div class="entry-modes" aria-label="Build mode"><button type="button" data-mode="cages" aria-pressed="true">Cages</button><button type="button" data-mode="digits" aria-pressed="false">Digits</button><button type="button" data-mode="notes" aria-pressed="false">Snyder notations</button><button type="button" data-mode="cage-free" aria-pressed="false">Cage-free cells</button></div><p>Choose Digits or Snyder notations, then select a cell and enter 1–9. P toggles notations. Delete or Backspace erases. Notations list every allowed digit; an empty cell is unrestricted.</p><p>Choose Cage-free cells and click cells (or press Space) to toggle × tags. Tagged cells stay outside every cage; digits and notations are still allowed. Remove an existing cage before tagging its cells.</p><div class="custom-number-pad"><button type="button" data-digit="1">1</button><button type="button" data-digit="2">2</button><button type="button" data-digit="3">3</button><button type="button" data-digit="4">4</button><button type="button" data-digit="5">5</button><button type="button" data-digit="6">6</button><button type="button" data-digit="7">7</button><button type="button" data-digit="8">8</button><button type="button" data-digit="9">9</button><button type="button" id="erase-cell">Erase</button></div><p id="entry-status" role="status"></p><p id="entry-error" class="error" role="alert"></p></section><section class="generate-panel"><h2>Define your cages</h2><p id="build-help">Click or tap cells to select them; click again to deselect. Use arrow keys to move and Space to select. Each cage holds 1–9 connected cells with no repeated digits. Select an existing cage to edit it.</p>
 <div class="build-actions"><button id="save-cage">Add cage</button><button id="clear-selection">Clear selection</button><button id="delete-cage" hidden>Delete cage</button></div>
 <p id="layout-error" class="error" role="alert"></p><p id="cage-count"></p><p>Unassigned cells follow ordinary Sudoku rules. Sums are generated automatically. Some layouts may not yield a unique puzzle.</p>
-<button id="build">Generate unique puzzle</button><button id="cancel" hidden>Cancel search</button><button id="clear-layout">Clear all cages</button>
+<button id="build">Generate unique puzzle</button><button id="clear-layout">Clear all cages</button>
 <p id="build-live" role="timer" hidden></p><p id="build-status" role="status" aria-live="polite">Add your first cage to begin.</p>
 <button id="play" hidden>View generated grid →</button></section>
 <section class="rules"><h2>Your cages</h2><p>Choose a cage to edit its cells. Editing the layout clears the generated result.</p><div id="cage-list"></div></section></aside></div></main>${footer}`;
@@ -86,9 +86,9 @@ function render() {
   element('entry-status').textContent = 'r' + (Math.floor(focused/9)+1) + 'c' + (focused%9+1) + ' · ' + (mode === 'notes' ? 'Snyder notations' : mode === 'digits' ? 'digit entry' : mode === 'cage-free' ? 'toggle cage-free tags' : 'cage selection');
   for(const button of document.querySelectorAll<HTMLButtonElement>('[data-mode]')) {button.disabled=!!worker;button.setAttribute('aria-pressed', String(button.dataset.mode === mode));}
   for(const button of document.querySelectorAll<HTMLButtonElement>('[data-digit],#erase-cell')) button.disabled=!!worker || mode === 'cages' || mode === 'cage-free';
-  element<HTMLButtonElement>('build').disabled = !!worker || (!groups.length && !entries.values.some(Boolean) && !entries.notes.some(Boolean)) || selected.size > 0 || !!entryError;
+  element<HTMLButtonElement>('build').disabled = !worker && ((!groups.length && !entries.values.some(Boolean) && !entries.notes.some(Boolean)) || selected.size > 0 || !!entryError);
+  element('build').textContent = worker ? 'Cancel search' : 'Generate unique puzzle';
   for (const id of ['clear-selection', 'clear-layout', 'delete-cage']) element<HTMLButtonElement>(id).disabled = !!worker;
-  element('cancel').hidden = !worker;
   const list = element('cage-list'); list.replaceChildren();
   groups.forEach((group, i) => {
     const button = document.createElement('button'); button.textContent = `Cage ${i + 1} · ${group.length} cells${puzzle ? ' · sum ' + puzzle.cages[i].sum : ''}`;
@@ -145,8 +145,8 @@ element('clear-selection').addEventListener('click', () => { selected.clear(); e
 element('delete-cage').addEventListener('click', () => { groups.splice(editing, 1); selected.clear(); editing = -1; invalidate(); render(); });
 element('clear-layout').addEventListener('click', () => { groups = []; selected.clear(); editing = -1; invalidate(); render(); });
 function stop() { liveTimer.stop(); worker?.terminate(); worker = null; render(); }
-element('cancel').addEventListener('click', () => { stop(); status.textContent = 'Search cancelled. Your layout is unchanged.'; });
 element('build').addEventListener('click', () => {
+  if(worker) {stop();status.textContent='Search cancelled. Your layout is unchanged.';return;}
   liveTimer.start();
   status.textContent = 'Searching for sums and checking uniqueness…';
   try {

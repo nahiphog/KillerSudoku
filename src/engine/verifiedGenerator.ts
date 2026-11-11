@@ -10,10 +10,9 @@ export interface LogicalProof { values: number[]; complete: boolean; steps: numb
 export type PuzzleOptions = CageOptions & { dig?: boolean; digPairs?: boolean; logicOnly?: boolean; retainedCageSizes?: readonly number[] };
 
 export function retainedCageSizesError(options: PuzzleOptions): string | null {
-  if (!options.dig) return null;
   const required = options.retainedCageSizes ?? [];
   if (required.some(size => !Number.isInteger(size) || size < 2 || size > 9)) return 'Retained cage sizes must be between 2 and 9; cages cannot contain repeated digits.';
-  if (required.some(size => !(options.sizes ?? DEFAULT_CAGE_SIZES).includes(size))) return 'Enable every retained cage size in Allowed cells per cage in Settings.';
+  if (required.some(size => !(options.sizes ?? DEFAULT_CAGE_SIZES).includes(size))) return 'Enable every required cage size in Allowed cells per cage.';
   return null;
 }
 
@@ -74,7 +73,7 @@ export function generateVerifiedPuzzle(options: PuzzleOptions, limits: Generatio
   if (error) throw new Error(error);
   const sizes = options.sizes ?? DEFAULT_CAGE_SIZES;
   if (sizes.every(size => size === 9)) throw new Error('Nine-cell cages all sum to 45 and cannot give a unique puzzle. Allow smaller cage sizes.');
-  const requiredSizes = options.dig ? options.retainedCageSizes ?? [] : [];
+  const requiredSizes = options.retainedCageSizes ?? [];
   const hasRequiredCage = (cages: Cage[]) => requiredSizes.every(size => cages.some(cage => cage.cells.length === size));
   const random = limits.random ?? Math.random;
   const started = performance.now();
@@ -86,7 +85,7 @@ export function generateVerifiedPuzzle(options: PuzzleOptions, limits: Generatio
     limits.onProgress?.(attempt);
     const grid = generateFullGrid(random);
     let cages: Cage[];
-    try { cages = generateCages(grid.values, canUseSmall && requiredSizes.every(size => size <= 3) && attempt % 5 !== 0 ? smallOptions : options, random, attempt % 3 === 0); }
+    try { cages = generateCages(grid.values, canUseSmall && requiredSizes.every(size => size <= 3) && attempt % 5 !== 0 ? { ...smallOptions, requiredSizes } : { ...options, requiredSizes }, random, attempt % 3 === 0); }
     catch { continue; }
     if (!hasRequiredCage(cages)) continue;
     let proof = proveLogically(cages, deadline);

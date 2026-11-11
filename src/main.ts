@@ -13,7 +13,7 @@ import { scoredTally } from './engine/techniqueScores';
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   ${header.replace('<button id="about"', '<button id="open-settings" type="button" aria-haspopup="dialog">Settings</button><button id="about"')}
-  <div class="generation-toolbar"><div class="generation-actions"><button id="generate" type="button">↻ Generate</button><label class="symmetry-option"><input id="dig-cages" type="checkbox" checked> Dig cages after generation</label><label class="symmetry-option"><input id="dig-pairs" type="checkbox" checked> Dig cages in pairs</label><label class="symmetry-option"><input id="logic-only" type="checkbox" checked title="Applies to the next generated puzzle. Every cell must be solvable with logical techniques; digging must preserve this complete solve."> Require a complete logical solve</label><fieldset id="retained-cage-sizes"><legend>Retain at least one cage of each selected size</legend>${Array.from({length:8},(_,i)=>`<label><input type="checkbox" name="retained-size" value="${i+2}"> ${i+2} cells</label>`).join('')}</fieldset><p>Cage options are available in Settings.</p></div><p id="generation-live" role="timer" hidden></p><dl id="generation-summary" aria-label="Generated puzzle details" hidden></dl></div>
+  <div class="generation-toolbar"><div class="generation-actions"><button id="generate" type="button">↻ Generate</button><fieldset id="retained-cage-sizes"><legend>Allowed cells per cage</legend>${Array.from({length:8},(_,i)=>i+2).map(size=>`<label>${size} cells <select name="cage-size" data-size="${size}" aria-label="${size}-cell cages"><option value="none">None</option><option value="required" ${DEFAULT_CAGE_SIZES.includes(size) ? 'selected' : ''}>At least 1</option></select></label>`).join('')}</fieldset><label class="symmetry-option"><input id="dig-cages" type="checkbox" checked> Dig cages after generation</label><label class="symmetry-option"><input id="dig-pairs" type="checkbox" checked> Dig cages in pairs</label><label class="symmetry-option"><input id="logic-only" type="checkbox" checked title="Applies to the next generated puzzle. Every cell must be solvable with logical techniques; digging must preserve this complete solve."> Require a complete logical solve</label></div><p id="generation-live" role="timer" hidden></p><dl id="generation-summary" aria-label="Generated puzzle details" hidden></dl></div>
   <main>
     <div class="workspace generation-workspace">
       <section class="board-panel" aria-labelledby="board-title">
@@ -46,10 +46,6 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
           <fieldset id="settings"><legend>Generation settings</legend>
             <label class="symmetry-option"><input id="symmetry" type="checkbox" checked> Rotationally symmetric cages</label>
             <p class="setting-help">Cage shapes match after a 180° turn.</p>
-            <fieldset class="size-options"><legend>Allowed cells per cage</legend>
-              <div class="size-choices">${Array.from({ length: 8 }, (_, i) => i + 2).map(size => `<label><input type="checkbox" name="size" value="${size}" ${DEFAULT_CAGE_SIZES.includes(size) ? 'checked' : ''}><span>${size}</span></label>`).join('')}</div>
-            </fieldset>
-            <p class="setting-help">Only selected sizes will be used. Each cage has connected cells and no repeated digits.</p>
           </fieldset>
 <p id="cage-settings-error" class="error" role="alert" hidden></p><form method="dialog"><button autofocus>Done</button></form></dialog>
   ${footer}`;
@@ -99,7 +95,7 @@ const historyList = document.querySelector<HTMLOListElement>('#step-history')!;
 function updateSolverControls() {
   const busy = !!worker;
   digToggle.disabled = busy;
-  retainedCageSizes.disabled = busy || !digToggle.checked;
+  retainedCageSizes.disabled = busy;
   logicOnlyToggle.disabled = busy;
   pairToggle.disabled = busy || !digToggle.checked || !document.querySelector<HTMLInputElement>('#symmetry')!.checked;
   button.textContent = busy ? 'Cancel generation' : '↻ Generate';
@@ -171,13 +167,14 @@ candidateToggle.addEventListener('change', paint);
 resetButton.addEventListener('click', () => seekWalkthrough(0));
 undoButton.addEventListener('click', () => seekWalkthrough(walkthroughPosition - 1));
 nextButton.addEventListener('click', () => seekWalkthrough(walkthroughPosition + 1));
+const selectedCageSizes = () => [...document.querySelectorAll<HTMLSelectElement>('select[name="cage-size"]')].filter(input=>input.value === 'required').map(input=>Number(input.dataset.size));
 const options = (): PuzzleOptions => ({
   dig: digToggle.checked,
-  retainedCageSizes: [...document.querySelectorAll<HTMLInputElement>('input[name="retained-size"]:checked')].map(input => Number(input.value)),
+  retainedCageSizes: selectedCageSizes(),
   logicOnly: logicOnlyToggle.checked,
   digPairs: pairToggle.checked,
   symmetric: document.querySelector<HTMLInputElement>('#symmetry')!.checked,
-  sizes: [...document.querySelectorAll<HTMLInputElement>('input[name="size"]:checked')].map(input => Number(input.value)),
+  sizes: selectedCageSizes(),
 });
 function validate() {
   const selected = options();
@@ -335,7 +332,7 @@ function acceptPuzzle(puzzle: VerifiedPuzzle, custom = false) {
   const summary = document.querySelector<HTMLElement>('#generation-summary')!;
   summary.replaceChildren(); summary.hidden = false;
   const totalRating = scores.reduce((sum, row) => sum + row.score, 0);
-  for (const [label, value] of [['Cages', String(cages.length)], ['Generation time', (elapsedMilliseconds / 1000).toFixed(2) + ' s'], ['Difficulty rating', totalRating.toLocaleString()], ['Hardest technique', hardest]]) {
+  for (const [label, value] of [['Cages', String(cages.length)], ['Generation time', (elapsedMilliseconds / 1000).toFixed(2) + ' s'], ['Difficulty rating', totalRating.toLocaleString()], ['Hardest technique', hardest], ['Uncaged cells', String(81 - new Set(cages.flatMap(cage=>cage.cells)).size)]]) {
     const group = document.createElement('div');
     const term = document.createElement('dt'); term.textContent = label;
     const detail = document.createElement('dd'); detail.textContent = value;

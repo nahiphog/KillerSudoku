@@ -1,7 +1,7 @@
 import { UNITS } from '../vendor/sudokui/board';
 
 export interface Cage { cells: number[]; sum: number }
-export interface CageOptions { sizes?: readonly number[]; symmetric?: boolean }
+export interface CageOptions { sizes?: readonly number[]; symmetric?: boolean; requiredSizes?: readonly number[] }
 export const DEFAULT_CAGE_SIZES = [2, 3, 4, 5, 6, 7];
 
 export function orthogonalNeighbors(cell: number): number[] {
@@ -70,13 +70,18 @@ export function generateCages(values: ArrayLike<number>, optionsOrRandom: CageOp
     return true;
   }
   function search(): boolean {
-    if (!free.size) return true;
+    if (!free.size) return (options.requiredSizes ?? []).every(size => groups.some(group => group.length === size));
     if (--budget <= 0) return false;
     const central = symmetric && free.has(40);
     const anchor = central ? 40 : Math.min(...free);
     const seen = new Set<string>();
     const targetSizes = shuffle(sizes.filter(s => !central || s % 2 === 1));
     if (preferSmall && random() < 0.9) targetSizes.sort((a, b) => a - b);
+    // Place missing required sizes early, then favor smaller cages for useful clues.
+    if (options.requiredSizes?.length) {
+      const missing = options.requiredSizes.filter(size => !groups.some(group => group.length === size));
+      targetSizes.sort((a, b) => Number(missing.includes(b)) - Number(missing.includes(a)) || (missing.includes(a) ? b - a : a - b));
+    }
     function grow(shape: number[], target: number): boolean {
       if (--budget <= 0) return false;
       const key = shape.slice().sort((a, b) => a - b).join(',');
@@ -115,7 +120,7 @@ export function generateCages(values: ArrayLike<number>, optionsOrRandom: CageOp
   if (search()) return finish(groups);
   // Guaranteed valid layouts when these sizes were explicitly selected.
   const stripe = sizes.includes(3) ? 3 : sizes.includes(9) ? 9 : null;
-  if (stripe) return finish(Array.from({ length: 81 / stripe }, (_, i) =>
+  if (stripe && (options.requiredSizes ?? []).every(size => size === stripe)) return finish(Array.from({ length: 81 / stripe }, (_, i) =>
     Array.from({ length: stripe }, (_, j) => i * stripe + j)));
   throw new Error('No cage layout found for this grid within the search limit. Try again or allow more cage sizes.');
 }
