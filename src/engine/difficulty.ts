@@ -5,7 +5,7 @@ export type Difficulty = typeof DIFFICULTIES[number];
 export const DIFFICULTY_TECHNIQUES: Record<Difficulty, readonly string[]> = {
   Easy: ['Cage combinations', 'Cage remainder', 'Full House', 'Naked Single', 'Hidden Single'],
   Medium: ['Locked Candidates (Pointing)', 'Locked Candidates (Claiming)', 'Naked Pair', 'Hidden Pair', 'Naked Triple', 'Hidden Triple'],
-  Hard: ['Naked Quadruple', 'X-Wing', 'W-Wing', 'XY-Wing', 'XYZ-Wing'],
+  Hard: ['Naked Quadruple', 'X-Wing', 'W-Wing', 'XY-Wing', 'XYZ-Wing', 'Phistomefel Ring'],
   Expert: ['Hidden Quadruple', 'Swordfish', 'Jellyfish', 'Empty Rectangle', 'Remote Pairs'],
 };
 export function techniqueDifficulty(technique: string): Difficulty {

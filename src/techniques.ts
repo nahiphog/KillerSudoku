@@ -27,7 +27,8 @@ const descriptions = [
 ];
 document.querySelector('#app')!.innerHTML = `${header}
 <main class="techniques-page"><a class="back-link" href="./">← Back to generator</a>
-<h1>Solving toolkit</h1><p class="toolkit-intro">20 techniques in the repertoire. These standard Sudoku techniques are imported and available in the engine for the next stage of the solver.</p>
+<h1>Solving toolkit</h1><p class="toolkit-intro">20 imported Sudoku techniques, Phistomefel Ring, and cage deductions are available in the solver.</p>
 <ol class="technique-cards">${TECHNIQUES.map((technique, i) => `<li><span class="technique-number">${String(i + 1).padStart(2, '0')}</span><h2>${technique.name}</h2><p>${descriptions[i]}</p></li>`).join('')}</ol>
+<section class="techniques"><h2>Phistomefel Ring · 200 per use</h2><p>The 16 cells surrounding the central 3×3 box (R3C3–R3C7, R4C3, R4C7, R5C3, R5C7, R6C3, R6C7, R7C3–R7C7) contain the same digit tally as the four 2×2 corner blocks (rows 1–2 and 8–9, columns 1–2 and 8–9). Repeated digits count separately.</p><p>For each digit, the solver compares guaranteed occurrences with the remaining possible positions on both sides. Once the shared count reaches a limit, it removes extra candidates or fills all required positions. The walkthrough highlights both regions and explains the counts. This works with sum, product, mixed and Psycho cages, including cells outside cages.</p></section>
 </main>${footer}`;
 setupAbout();

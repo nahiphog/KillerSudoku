@@ -4,6 +4,7 @@ import { combinationTable } from './combinations';
 import type { Cage } from './cages';
 import { techniqueRank } from './difficulty';
 import { deductionLinks } from './deductionLinks';
+import { findPhistomefelRing } from './phistomefelRing';
 import type { ChainLink } from '../vendor/sudokui/steps';
 
 export interface Deduction {
@@ -32,6 +33,8 @@ export const startSolver = (): Grid => emptyGrid();
 // Exhaust easier bands before trying a harder deduction, for meaningful ratings.
 const logicalOrder = TECHNIQUES.filter(t => t.id !== 'BRUTE_FORCE')
   .slice().sort((a, b) => techniqueRank(a.name) - techniqueRank(b.name));
+const beforeRing = logicalOrder.filter(t => techniqueRank(t.name) < techniqueRank('Phistomefel Ring'));
+const afterRing = logicalOrder.filter(t => techniqueRank(t.name) > techniqueRank('Phistomefel Ring'));
 
 /** Perfect matching: can each cage cell take a different digit from this set?
  * An optional forced edge tests whether a particular candidate has support.
@@ -147,7 +150,12 @@ export function nextKillerStep(grid: Grid, cages: Cage[]): SolverResult {
   }
   if (isSolved(grid)) return { status: 'solved', message: 'Solved: every row, column, box and cage satisfies its rules.' };
   if (cageStep) return { status: 'step', step: cageStep };
-  const step = findNextStep(grid, false, logicalOrder); // No guesses or generated solution.
+  let step = findNextStep(grid, false, beforeRing); // No guesses or generated solution.
+  if (!step) {
+    const ring = findPhistomefelRing(grid);
+    if (ring) return { status: 'step', step: ring };
+    step = findNextStep(grid, false, afterRing);
+  }
   const pattern = step ? [...(step.primary ?? []), ...(step.secondary ?? []),
     ...(step.colouring?.clusters ?? []).flatMap(cluster => [...cluster.dark, ...cluster.light]),
     ...(step.links ?? []).flatMap(link => [...link.from, ...link.to]),
@@ -166,7 +174,7 @@ export function nextKillerStep(grid: Grid, cages: Cage[]): SolverResult {
         .filter(cell => grid.values[cell]).map(cell => ({ cell, digit: grid.values[cell] })) : []),
     ].filter(({ cell, digit }) => grid.values[cell] === digit || (!grid.values[cell] && !!(grid.cands[cell] & bit(digit)))),
   } };
-  return { status: 'stalled', message: 'No further logical deduction was found using cage combinations and the imported techniques. This puzzle may need stronger techniques or may have multiple solutions. No guess or hidden solution digit has been used.' };
+  return { status: 'stalled', message: 'No further logical deduction was found using cage combinations, Phistomefel Ring and the imported techniques. This puzzle may need stronger techniques or may have multiple solutions. No guess or hidden solution digit has been used.' };
 }
 
 export function applyDeduction(grid: Grid, cages: Cage[], step: Deduction): Grid {
