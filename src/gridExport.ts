@@ -144,9 +144,23 @@ export function setupGridExport(board: HTMLElement, snapshot: ()=>ExportGrid, va
       try {
         if(url) URL.revokeObjectURL(url);
         url=URL.createObjectURL(await blob);download.href=url;download.hidden=false;
+        download.download='killer-sudoku.png';download.textContent='Download grid image';
         status.textContent='Clipboard image access is unavailable. Download the PNG instead.';
       } catch {status.textContent='Unable to create the grid image. Please try again.';}
     } finally {button.disabled=false;}
+  };
+  const exportFile=async(button:HTMLButtonElement,variant:ExportVariant,format:'png'|'json')=>{
+    button.disabled=true;status.textContent='Preparing grid export…';
+    try {
+      const blob=format==='png' ? await variants!.image(variant) : new Blob([serializeGrid(variants!.snapshot(variant))],{type:'application/json'});
+      if(url)URL.revokeObjectURL(url);
+      url=URL.createObjectURL(blob);
+      download.href=url;download.download=`killer-sudoku-${variant}.${format}`;
+      download.textContent=`Download ${variant==='puzzle'?'puzzle':'completed grid'} ${format.toUpperCase()}`;
+      download.hidden=false;download.click();
+      status.textContent=`${format.toUpperCase()} download started. Use the download link to save it again.`;
+    } catch {status.textContent='Unable to export the grid. Please try again.';}
+    finally {button.disabled=false;}
   };
   textButton.addEventListener('click',()=>void copyText(snapshot));
   imageButton.addEventListener('click',()=>void copyImage(imageButton,()=>gridImage(board)));
@@ -162,6 +176,12 @@ export function setupGridExport(board: HTMLElement, snapshot: ()=>ExportGrid, va
       const text=document.createElement('button');text.type='button';text.textContent='Copy '+(variant==='puzzle'?'puzzle':'completed grid')+' as string';
       text.addEventListener('click',()=>void copyText(()=>variants.snapshot(variant)));
       group.append(image,text);status.before(group);buttons.push(image,text);variantGroups.push(group);
+      for(const format of ['png','json'] as const){
+        const exportButton=document.createElement('button');exportButton.type='button';
+        exportButton.textContent=`Export ${variant==='puzzle'?'puzzle':'completed grid'} as ${format==='png'?'PNG':'JSON'}`;
+        exportButton.addEventListener('click',()=>void exportFile(exportButton,variant,format));
+        group.append(exportButton);buttons.push(exportButton);
+      }
     }
   }
   return (enabled:boolean)=>{
