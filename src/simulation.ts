@@ -110,6 +110,7 @@ function card(record: SimulationRecord) {
   // Each result owns its controls and status, with no repeated document IDs.
   article.insertAdjacentHTML('beforeend',exportControls.replace(/id="([^"]+)"/g,'data-export-control="$1"'));
   setupGridExport(board,()=>simulationExportGrid(record,false),{
+    currentView:false,
     snapshot:variant=>simulationExportGrid(record,variant==='completed'),
     image:variant=>{
       const digits:HTMLElement[]=[];
@@ -121,8 +122,6 @@ function card(record: SimulationRecord) {
       } finally {for(const digit of digits)digit.remove();}
     },
   },article)(true);
-  article.querySelector('[data-export-control="copy-grid-image"]')!.remove();
-  article.querySelector('[data-export-control="copy-grid-string"]')!.remove();
   return article;
 }
 async function results() {
