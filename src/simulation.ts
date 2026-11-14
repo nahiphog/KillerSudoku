@@ -5,7 +5,8 @@ import './simulation.css';
 import { header, footer, setupAbout } from './shell';
 import { HISTOGRAM_EDGES, TRIAL_COUNTS, RATING_THRESHOLDS, histogramBin, matchesSimulation, type SimulationResult, type SimulationRecord } from './engine/simulation';
 import { simulationStore } from './simulationStore';
-import { serializeGrid } from './gridExport';
+import { exportControls, setupGridExport, gridImage } from './gridExport';
+import { simulationExportGrid } from './simulationExport';
 import { simulationWalkthroughUrl } from './simulationWalkthrough';
 import { cageOptionsError, DEFAULT_CAGE_SIZES, type CageArithmetic, cageSymbol } from './engine/cages';
 import { retainedCageSizesError, type PuzzleOptions } from './engine/verifiedGenerator';
@@ -106,13 +107,23 @@ function card(record: SimulationRecord) {
   walkthrough.textContent='Open solution walkthrough';walkthrough.href=simulationWalkthroughUrl(record);
   walkthrough.target='_blank';walkthrough.rel='noopener';walkthrough.setAttribute('aria-label',`Open solution walkthrough for trial ${record.trial} (new tab)`);
   article.append(walkthrough);
-  const copy=document.createElement('button');copy.textContent='Copy grid string';
-  const fallback=document.createElement('textarea');fallback.hidden=true;fallback.readOnly=true;fallback.setAttribute('aria-label','Grid string');
-  copy.addEventListener('click',async()=>{
-    const text=serializeGrid({cages:record.cages,values:Array(81).fill(0),notes:Array.from({length:81},()=>[])});
-    try {await navigator.clipboard.writeText(text);copy.textContent='Grid string copied';}
-    catch {fallback.value=text;fallback.hidden=false;fallback.focus();fallback.select();copy.textContent='Copy the selected grid string';}
-  });article.append(copy,fallback);return article;
+  // Each result owns its controls and status, with no repeated document IDs.
+  article.insertAdjacentHTML('beforeend',exportControls.replace(/id="([^"]+)"/g,'data-export-control="$1"'));
+  setupGridExport(board,()=>simulationExportGrid(record,false),{
+    snapshot:variant=>simulationExportGrid(record,variant==='completed'),
+    image:variant=>{
+      const digits:HTMLElement[]=[];
+      try {
+        if(variant==='completed')for(const [index,cell] of [...board.querySelectorAll('td')].entries()){
+          const digit=document.createElement('span');digit.className='cell-digit';digit.textContent=record.solution[index];cell.append(digit);digits.push(digit);
+        }
+        return gridImage(board);
+      } finally {for(const digit of digits)digit.remove();}
+    },
+  },article)(true);
+  article.querySelector('[data-export-control="copy-grid-image"]')!.remove();
+  article.querySelector('[data-export-control="copy-grid-string"]')!.remove();
+  return article;
 }
 async function results() {
   const version=++renderId, currentStore=store;

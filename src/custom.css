@@ -19,7 +19,7 @@
 .custom-board tbody, .custom-board tr { display: contents; }
 .custom-board td { width: 100%; height: auto; aspect-ratio: 1; min-width: 0; }
 
-.custom-board .custom-digit { position: relative; z-index: 2; display: inline-block; transform: translateY(4px); }
+.custom-board .custom-digit { position: relative; z-index: 4; display: inline-block; transform: translateY(4px); }
 .custom-notes { position: absolute; inset: 18px 5px 4px; display: grid; grid-template-columns: repeat(3,1fr); grid-template-rows: repeat(3,1fr); font: 12px/1 sans-serif; }
 .custom-notes span { display: grid; place-items: center; }
 .custom-board td.entry-focused { box-shadow: inset 0 0 0 3px #397ca6; }

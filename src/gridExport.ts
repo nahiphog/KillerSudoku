@@ -35,7 +35,7 @@ export function visibleGrid(board: HTMLElement, cages: Cage[] | ExportGrid['cage
 /** Snapshot the visible board and legend, including the current walkthrough colors. */
 export function gridImage(board: HTMLElement): Promise<Blob> {
   const bounds = board.getBoundingClientRect();
-  const legend = [...board.closest('.board-panel')?.querySelectorAll<HTMLElement>('.cage-legend > span') ?? []].map(item => ({
+  const legend = [...board.closest('.board-panel, .simulation-card')?.querySelectorAll<HTMLElement>('.cage-legend > span') ?? []].map(item => ({
     text: item.textContent?.trim() ?? '',
     color: getComputedStyle(item.querySelector('i')!).borderTopColor,
     textColor: getComputedStyle(item).color,
@@ -69,7 +69,10 @@ export function gridImage(board: HTMLElement): Promise<Blob> {
     const r=rect(cell);ctx.fillStyle=getComputedStyle(cell).backgroundColor;ctx.fillRect(r.x,r.y,r.w,r.h);borders(cell);
   }
   for (const outline of board.querySelectorAll('.cage-outline')) borders(outline,true);
-  for (const mark of board.querySelectorAll('.cell-digit, .custom-digit, .cell-candidates > span, .custom-notes > span, .cage-sum, .cage-free-tag')) {
+  // Paint filled digits last so they sit above cage clues, matching CSS layering.
+  const marks = [...board.querySelectorAll('.cell-candidates > span, .custom-notes > span, .cage-sum, .cage-free-tag'),
+    ...board.querySelectorAll('.cell-digit, .custom-digit')];
+  for (const mark of marks) {
     if (!mark.textContent) continue;
     const r=rect(mark), style=getComputedStyle(mark);
     ctx.fillStyle=style.backgroundColor;ctx.fillRect(r.x,r.y,r.w,r.h);
@@ -116,12 +119,13 @@ export function setupGridExport(board: HTMLElement, snapshot: ()=>ExportGrid, va
   snapshot: (variant: ExportVariant)=>ExportGrid;
   image: (variant: ExportVariant)=>Promise<Blob>;
   available?: ()=>boolean;
-}) {
-  const imageButton=document.querySelector<HTMLButtonElement>('#copy-grid-image')!;
-  const textButton=document.querySelector<HTMLButtonElement>('#copy-grid-string')!;
-  const status=document.querySelector<HTMLElement>('#copy-status')!;
-  const download=document.querySelector<HTMLAnchorElement>('#download-grid-image')!;
-  const fallback=document.querySelector<HTMLTextAreaElement>('#grid-string-fallback')!;
+}, root: ParentNode = document) {
+  const control=<T extends HTMLElement>(id:string)=>root.querySelector<T>(`#${id}, [data-export-control="${id}"]`)!;
+  const imageButton=control<HTMLButtonElement>('copy-grid-image');
+  const textButton=control<HTMLButtonElement>('copy-grid-string');
+  const status=control<HTMLElement>('copy-status');
+  const download=control<HTMLAnchorElement>('download-grid-image');
+  const fallback=control<HTMLTextAreaElement>('grid-string-fallback');
   let url: string | undefined;
   const copyText=async(getSnapshot:()=>ExportGrid)=>{
     const text=serializeGrid(getSnapshot());fallback.hidden=true;
