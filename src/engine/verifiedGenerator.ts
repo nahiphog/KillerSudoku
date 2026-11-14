@@ -4,7 +4,8 @@ import { bit, cloneGrid, type Grid } from '../vendor/sudokui/board';
 import { generateFullGrid } from './generator';
 import { cageOptionsError, DEFAULT_CAGE_SIZES, generateCages, type Cage, type CageOptions } from './cages';
 import { applyDeduction, nextKillerStep, psychoOperationSteps, startSolver, type Deduction } from './killerSolver';
-import { techniqueDifficulty, techniqueRank, type Difficulty } from './difficulty';
+import { techniqueDifficulty, type Difficulty } from './difficulty';
+import { techniqueScore } from './techniqueScores';
 
 export interface LogicalProof { values: number[]; complete: boolean; steps: number; difficulty: Difficulty; hardestTechnique: string; deductions: Deduction[]; techniqueTally: Record<string, number> }
 export type PuzzleOptions = CageOptions & { dig?: boolean; digPairs?: boolean; digSingletons?: boolean; logicOnly?: boolean; retainedCageSizes?: readonly number[] };
@@ -49,7 +50,7 @@ export function traceLogically(cages: Cage[], deadline = Infinity, allowBruteFor
     if (result.status === 'solved' || result.status === 'stalled') return { complete: result.status === 'solved', values: Array.from(grid.values), steps: deductions.length, difficulty: hardestTechnique === 'Brute Force' ? 'Expert' : techniqueDifficulty(hardestTechnique), hardestTechnique, deductions, techniqueTally };
     if (result.status !== 'step') return null;
     const step = result.step;
-    if (step.technique === 'Brute Force' || (hardestTechnique !== 'Brute Force' && techniqueRank(step.technique) > techniqueRank(hardestTechnique))) hardestTechnique = step.technique;
+    if (techniqueScore(step.technique) > techniqueScore(hardestTechnique)) hardestTechnique = step.technique;
     if (!step.placements.some(p => !grid.values[p.cell] && (grid.cands[p.cell] & bit(p.digit)))
       && !step.eliminations.some(e => !grid.values[e.cell] && (grid.cands[e.cell] & bit(e.digit)))) return null;
     grid = applyDeduction(grid, cages, step);

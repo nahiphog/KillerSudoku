@@ -1,6 +1,7 @@
 import { bit, cloneGrid, isBroken, isSolved, setValue, type Grid } from '../vendor/sudokui/board';
 import { solve } from '../vendor/sudokui/bruteForce';
 import { withHouses, type Step } from '../vendor/sudokui/steps';
+import { TECHS, type Tech } from '../vendor/sudokui/ratings';
 import { findFullHouse, findNakedSingle, findHiddenSingle } from '../vendor/sudokui/techniques/singles';
 import { findLockedCandidates1, findLockedCandidates2 } from '../vendor/sudokui/techniques/intersections';
 import { findNakedSubset, findHiddenSubset } from '../vendor/sudokui/techniques/subsets';
@@ -43,7 +44,9 @@ export const TECHNIQUES: readonly { id: string; name: string; find: Finder }[] =
   { id: 'BRUTE_FORCE', name: 'Brute Force', find: bruteForce },
 ];
 
-export function findNextStep(grid: Grid, allowBruteForce = false, order = TECHNIQUES): Step | null {
+const ratedOrder = [...TECHNIQUES].sort((a, b) => TECHS[a.id as Tech].score - TECHS[b.id as Tech].score);
+
+export function findNextStep(grid: Grid, allowBruteForce = false, order = ratedOrder): Step | null {
   if (isBroken(grid) || isSolved(grid)) return null;
   for (const technique of order) {
     if (technique.id === 'BRUTE_FORCE' && !allowBruteForce) continue;

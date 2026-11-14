@@ -2,7 +2,7 @@ import { bit, cloneGrid, digitsOf, emptyGrid, isBroken, isSolved, setValue, UNIT
 import { findNextStep, TECHNIQUES } from './solver';
 import { combinationTable } from './combinations';
 import type { Cage } from './cages';
-import { techniqueRank } from './difficulty';
+import { techniqueScore } from './techniqueScores';
 import { deductionLinks } from './deductionLinks';
 import { findPhistomefelRing } from './phistomefelRing';
 import type { ChainLink } from '../vendor/sudokui/steps';
@@ -30,11 +30,11 @@ productTables.set(1,tables.get(1)!);
 const psychoTables = new Map(Array.from({length:8},(_,i)=>[i+2,combinationTable(i+2,'psycho')]));
 psychoTables.set(1,tables.get(1)!);
 export const startSolver = (): Grid => emptyGrid();
-// Exhaust easier bands before trying a harder deduction, for meaningful ratings.
+// Retry from the lowest numeric rating on every board state, not difficulty bands.
 const logicalOrder = TECHNIQUES.filter(t => t.id !== 'BRUTE_FORCE')
-  .slice().sort((a, b) => techniqueRank(a.name) - techniqueRank(b.name));
-const beforeRing = logicalOrder.filter(t => techniqueRank(t.name) < techniqueRank('Phistomefel Ring'));
-const afterRing = logicalOrder.filter(t => techniqueRank(t.name) > techniqueRank('Phistomefel Ring'));
+  .slice().sort((a, b) => techniqueScore(a.name) - techniqueScore(b.name));
+const beforeRing = logicalOrder.filter(t => techniqueScore(t.name) <= techniqueScore('Phistomefel Ring'));
+const afterRing = logicalOrder.filter(t => techniqueScore(t.name) > techniqueScore('Phistomefel Ring'));
 
 /** Perfect matching: can each cage cell take a different digit from this set?
  * An optional forced edge tests whether a particular candidate has support.
