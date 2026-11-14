@@ -111,21 +111,26 @@ export function gridImage(board: HTMLElement): Promise<Blob> {
 
 export const exportControls = `<div class="grid-export"><button type="button" id="copy-grid-image">Copy grid image</button><button type="button" id="copy-grid-string">Copy grid string</button><p id="copy-status" role="status" aria-live="polite"></p><a id="download-grid-image" hidden download="killer-sudoku.png">Download grid image</a><textarea id="grid-string-fallback" aria-label="Grid string to copy" readonly hidden></textarea></div>`;
 
-export function setupGridExport(board: HTMLElement, snapshot: ()=>ExportGrid) {
+export type ExportVariant = 'puzzle' | 'completed';
+export function setupGridExport(board: HTMLElement, snapshot: ()=>ExportGrid, variants?: {
+  snapshot: (variant: ExportVariant)=>ExportGrid;
+  image: (variant: ExportVariant)=>Promise<Blob>;
+  available?: ()=>boolean;
+}) {
   const imageButton=document.querySelector<HTMLButtonElement>('#copy-grid-image')!;
   const textButton=document.querySelector<HTMLButtonElement>('#copy-grid-string')!;
   const status=document.querySelector<HTMLElement>('#copy-status')!;
   const download=document.querySelector<HTMLAnchorElement>('#download-grid-image')!;
   const fallback=document.querySelector<HTMLTextAreaElement>('#grid-string-fallback')!;
   let url: string | undefined;
-  textButton.addEventListener('click',async()=>{
-    const text=serializeGrid(snapshot());fallback.hidden=true;
+  const copyText=async(getSnapshot:()=>ExportGrid)=>{
+    const text=serializeGrid(getSnapshot());fallback.hidden=true;
     try {await navigator.clipboard.writeText(text);status.textContent='Grid string copied, including all cage positions and clues.';}
     catch {fallback.value=text;fallback.hidden=false;fallback.focus();fallback.select();status.textContent='Clipboard access is unavailable. Copy the selected grid string manually.';}
-  });
-  imageButton.addEventListener('click',async()=>{
-    imageButton.disabled=true;download.hidden=true;status.textContent='Copying grid image…';
-    const blob=gridImage(board);
+  };
+  const copyImage=async(button:HTMLButtonElement,getImage:()=>Promise<Blob>)=>{
+    button.disabled=true;download.hidden=true;status.textContent='Copying grid image…';
+    const blob=Promise.resolve().then(getImage);
     try {
       // Start the clipboard write during the click gesture, before PNG encoding finishes.
       if(!navigator.clipboard?.write || typeof ClipboardItem === 'undefined') throw new Error('Clipboard images unavailable');
@@ -137,7 +142,27 @@ export function setupGridExport(board: HTMLElement, snapshot: ()=>ExportGrid) {
         url=URL.createObjectURL(await blob);download.href=url;download.hidden=false;
         status.textContent='Clipboard image access is unavailable. Download the PNG instead.';
       } catch {status.textContent='Unable to create the grid image. Please try again.';}
-    } finally {imageButton.disabled=false;}
-  });
-  return (enabled:boolean)=>{imageButton.disabled=!enabled;textButton.disabled=!enabled;};
+    } finally {button.disabled=false;}
+  };
+  textButton.addEventListener('click',()=>void copyText(snapshot));
+  imageButton.addEventListener('click',()=>void copyImage(imageButton,()=>gridImage(board)));
+  const buttons=[imageButton,textButton];
+  const variantGroups: HTMLElement[]=[];
+  if(variants){
+    imageButton.textContent='Copy current view as image';textButton.textContent='Copy current view as string';
+    for(const variant of ['puzzle','completed'] as const){
+      const group=document.createElement('div');group.className='export-variant';
+      const title=document.createElement('strong');title.textContent=variant==='puzzle'?'Puzzle (cages and original entries)':'Completed grid';group.append(title);
+      const image=document.createElement('button');image.type='button';image.textContent='Copy '+(variant==='puzzle'?'puzzle':'completed grid')+' as image';
+      image.addEventListener('click',()=>void copyImage(image,()=>variants.image(variant)));
+      const text=document.createElement('button');text.type='button';text.textContent='Copy '+(variant==='puzzle'?'puzzle':'completed grid')+' as string';
+      text.addEventListener('click',()=>void copyText(()=>variants.snapshot(variant)));
+      group.append(image,text);status.before(group);buttons.push(image,text);variantGroups.push(group);
+    }
+  }
+  return (enabled:boolean)=>{
+    for(const button of buttons)button.disabled=!enabled;
+    const available=variants?.available?.() ?? true;
+    for(const group of variantGroups){group.hidden=!available;for(const button of group.querySelectorAll('button'))button.disabled=!enabled || !available;}
+  };
 }

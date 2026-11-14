@@ -2,7 +2,7 @@ import { combinationTable } from './engine/combinations';
 import { cageLegend } from './cageLegend';
 import { cageSymbol, type CageOperation } from './engine/cages';
 import { parseGridString } from './engine/gridImport';
-import { exportControls, setupGridExport, visibleGrid, serializeGrid } from './gridExport';
+import { exportControls, setupGridExport, visibleGrid, serializeGrid, gridImage } from './gridExport';
 import { customEntryGrid } from './engine/customEntries';
 import { digitsOf } from './vendor/sudokui/board';
 import { generationTimer } from './generationTimer';
@@ -44,7 +44,18 @@ let puzzle: VerifiedPuzzle | null = null;
 const status = element('build-status');
 const liveTimer = generationTimer(element('build-live'));
 
-const updateExportControls = setupGridExport(document.querySelector<HTMLElement>('.custom-board')!, () => visibleGrid(document.querySelector<HTMLElement>('.custom-board')!, puzzle?.cages ?? groups.map((cells,i)=>({cells,sum:sums[i] ?? null,operation:operations[i]})), [...cageFreeCells]));
+const exportBoard=element<HTMLTableElement>('app').querySelector<HTMLElement>('.custom-board')!;
+const updateExportControls = setupGridExport(exportBoard, () => visibleGrid(exportBoard, puzzle?.cages ?? groups.map((cells,i)=>({cells,sum:sums[i] ?? null,operation:operations[i]})), [...cageFreeCells]), {
+  available:()=>!!puzzle,
+  snapshot:variant=>({cages:puzzle!.cages,values:variant==='completed'?[...puzzle!.values]:[...entries.values],notes:variant==='completed'?Array.from({length:81},()=>[]):entries.notes.map(digitsOf),cageFreeCells:[...cageFreeCells]}),
+  image:variant=>{
+    const saved=entries;
+    try {
+      if(variant==='completed')entries={...entries,values:[...puzzle!.values],notes:Array(81).fill(0)};
+      render();return gridImage(exportBoard);
+    } finally {entries=saved;render();}
+  },
+});
 function invalidate() { puzzle = null; element('play').hidden = true; status.textContent = 'Entries or layout changed. Verify or generate again to refresh the walkthrough.'; }
 function render() {
   updateExportControls(!worker);

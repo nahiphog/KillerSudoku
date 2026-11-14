@@ -7,6 +7,13 @@
 .grid-export p { width: 100%; margin: 0; font-size: 13px; }
 .grid-export textarea { width: 100%; min-height: 100px; }
 .grid-export [hidden] { display: none; }
+.export-variant { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; padding-top: 10px; border-top: 1px solid #e0e2d8; }
+.export-variant strong { width: 100%; font-size: 12px; }
+.import-page { max-width: 760px; }
+.import-page textarea { display: block; width: 100%; min-height: 220px; margin: 12px 0; padding: 14px; border: 1px solid #a9b7aa; border-radius: 8px; resize: vertical; font: 13px/1.5 monospace; }
+.import-page .import-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.import-page button { width: auto; margin-top: 0; }
+.import-page [hidden] { display: none; }
 
 .grid-import-dialog { width: min(680px, calc(100% - 32px)); border: 1px solid #bcc8b6; border-radius: 12px; padding: 24px; color: #233c35; }
 .grid-import-dialog::backdrop { background: #233c3577; }

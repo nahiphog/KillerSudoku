@@ -1,6 +1,6 @@
 import { importButton, setupGridImport } from './gridImportDialog';
 import { cageLegend } from './cageLegend';
-import { exportControls, setupGridExport, visibleGrid, serializeGrid } from './gridExport';
+import { exportControls, setupGridExport, visibleGrid, serializeGrid, gridImage, type ExportVariant } from './gridExport';
 import { generationTimer } from './generationTimer';
 import { customEntryGrid } from './engine/customEntries';
 import './style.css';
@@ -102,7 +102,24 @@ const undoButton = document.querySelector<HTMLButtonElement>('#undo-step')!;
 const resetButton = document.querySelector<HTMLButtonElement>('#reset-solver')!;
 const solverMessage = document.querySelector('#solver-message')!;
 const historyList = document.querySelector<HTMLOListElement>('#step-history')!;
-const updateExportControls = setupGridExport(document.querySelector<HTMLElement>('.board')!, () => visibleGrid(document.querySelector<HTMLElement>('.board')!, activeCages, exportedCageFreeCells));
+const exportBoard = document.querySelector<HTMLElement>('.board')!;
+const updateExportControls = setupGridExport(exportBoard, () => visibleGrid(exportBoard, activeCages, exportedCageFreeCells), {
+  snapshot: variant => ({cages:activeCages,values:variant==='completed' ? [...solution!] : Array.from(initialGrid.values),
+    notes:variant==='completed' ? Array.from({length:81},()=>[]) : (restoredNotes ?? Array(81).fill(0)).map(digitsOf),cageFreeCells:exportedCageFreeCells}),
+  image: exportVariantImage,
+});
+function exportVariantImage(variant: ExportVariant): Promise<Blob> {
+  const saved={revealSolution,walkthroughPosition,solvingGrid,candidates:candidateToggle.checked};
+  try {
+    revealSolution=variant==='completed';
+    if(variant==='puzzle'){walkthroughPosition=0;solvingGrid=initialGrid;candidateToggle.checked=!!restoredNotes?.some(Boolean);}
+    renderBoard(variant==='completed' ? solution! : Array.from(initialGrid.values),activeCages);
+    return gridImage(exportBoard); // Canvas snapshots synchronously before restoring the view.
+  } finally {
+    revealSolution=saved.revealSolution;walkthroughPosition=saved.walkthroughPosition;solvingGrid=saved.solvingGrid;candidateToggle.checked=saved.candidates;
+    renderBoard(revealSolution ? solution! : Array.from(solvingGrid.values),activeCages);
+  }
+}
 updateExportControls(false);
 function updateSolverControls() {
   const busy = !!worker;
@@ -384,6 +401,10 @@ if (new URLSearchParams(location.search).get('custom') === '1') {
     const stored = sessionStorage.getItem('custom-puzzle');
     if (!stored) throw new Error('No custom puzzle is available.');
     acceptPuzzle(JSON.parse(stored) as VerifiedPuzzle, true);
+    if(new URLSearchParams(location.search).get('import')==='1'){
+      document.querySelector('#board-title')!.textContent='Imported grid';
+      document.querySelector('#badge')!.textContent='IMPORTED · '+activeCages.length+' CAGES';
+    }
   } catch {
     status.textContent = 'Unable to load the custom puzzle. Return to Custom Build and generate a new puzzle.';
   }
