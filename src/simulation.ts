@@ -106,7 +106,7 @@ function card(record: SimulationRecord) {
   const walkthrough=document.createElement('a');walkthrough.className='simulation-walkthrough';
   walkthrough.textContent='Open solution walkthrough';walkthrough.href=simulationWalkthroughUrl(record);
   walkthrough.target='_blank';walkthrough.rel='noopener';walkthrough.setAttribute('aria-label',`Open solution walkthrough for trial ${record.trial} (new tab)`);
-  article.append(walkthrough);
+
   // Each result owns its controls and status, with no repeated document IDs.
   article.insertAdjacentHTML('beforeend',exportControls.replace(/id="([^"]+)"/g,'data-export-control="$1"'));
   setupGridExport(board,()=>simulationExportGrid(record,false),{
@@ -122,6 +122,7 @@ function card(record: SimulationRecord) {
       } finally {for(const digit of digits)digit.remove();}
     },
   },article)(true);
+  article.append(walkthrough);
   return article;
 }
 async function results() {

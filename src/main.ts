@@ -25,6 +25,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         <div class="board-stage">
         <div class="grid-frame"><table class="board" role="grid" aria-label="Sudoku grid" aria-readonly="true"><tbody>${Array.from({ length: 9 }, (_, r) => `<tr>${Array.from({ length: 9 }, (_, c) => `<td role="gridcell" tabindex="-1" aria-label="Row ${r + 1}, column ${c + 1}, empty"></td>`).join('')}</tr>`).join('')}</tbody></table></div>
         ${cageLegend}
+        ${exportControls}
         <div class="walkthrough-controls">          <div class="solver-actions"><button id="next-step" type="button" disabled>Next step</button><button id="undo-step" type="button" disabled>Undo step</button><button id="reset-solver" type="button" disabled>Reset solver</button></div>
           <label for="walkthrough">Solution walkthrough</label><input id="walkthrough" type="range" min="0" max="0" value="0" step="1" disabled aria-describedby="walkthrough-position"><output id="walkthrough-position" for="walkthrough">Step 0 of 0</output>
           <div class="change-legend"><span class="placed-digit">Placed digit</span><span class="removed-candidate">Removed candidate</span><span class="support-digit">Supporting cells / digits</span></div>
@@ -32,7 +33,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 </div>
         </div>
         <div class="board-footer"><span class="status-dot" aria-hidden="true"></span><p id="status" role="status" aria-live="polite">Generate a grid with cages to get started.</p></div>
-        ${exportControls}<button id="edit-custom" type="button" disabled>Edit in Custom Build</button><div class="board-actions"><button id="toggle-solution" type="button" disabled>Hide solution</button><label><input id="show-candidates" type="checkbox" disabled> Show candidates</label></div>
+        <button id="edit-custom" type="button" disabled>Edit in Custom Build</button><div class="board-actions"><button id="toggle-solution" type="button" disabled>Hide solution</button><label><input id="show-candidates" type="checkbox" disabled> Show candidates</label></div>
       </section>
       <aside>
         <section id="deduction-panel" class="solver-panel" aria-label="Current deduction" hidden>

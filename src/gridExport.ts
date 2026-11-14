@@ -112,7 +112,7 @@ export function gridImage(board: HTMLElement): Promise<Blob> {
   return new Promise((resolve,reject)=>canvas.toBlob(blob=>blob ? resolve(blob) : reject(new Error('Unable to create image.')),'image/png'));
 }
 
-export const exportControls = `<div class="grid-export"><select id="grid-export-menu" aria-label="Export grid"><option value="">Export</option></select><p id="copy-status" role="status" aria-live="polite"></p><img id="grid-image-fallback" hidden alt="Grid image to copy"><textarea id="grid-string-fallback" aria-label="Grid string to copy" readonly hidden></textarea></div>`;
+export const exportControls = `<div class="grid-export" role="group" aria-label="Copy this grid"><strong class="export-heading">Copy this grid</strong><select id="grid-export-menu" aria-label="Export grid"><option value="">Export — choose a copy option</option></select><p id="copy-status" role="status" aria-live="polite"></p><img id="grid-image-fallback" hidden alt="Grid image to copy"><textarea id="grid-string-fallback" aria-label="Grid string to copy" readonly hidden></textarea></div>`;
 
 export type ExportVariant = 'puzzle' | 'completed';
 export function setupGridExport(board: HTMLElement, snapshot: ()=>ExportGrid, variants?: {
