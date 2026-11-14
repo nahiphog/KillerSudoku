@@ -112,7 +112,7 @@ export function gridImage(board: HTMLElement): Promise<Blob> {
   return new Promise((resolve,reject)=>canvas.toBlob(blob=>blob ? resolve(blob) : reject(new Error('Unable to create image.')),'image/png'));
 }
 
-export const exportControls = `<div class="grid-export"><button type="button" id="copy-grid-image">Copy grid image</button><button type="button" id="copy-grid-string">Copy grid string</button><p id="copy-status" role="status" aria-live="polite"></p><a id="download-grid-image" hidden download="killer-sudoku.png">Download grid image</a><textarea id="grid-string-fallback" aria-label="Grid string to copy" readonly hidden></textarea></div>`;
+export const exportControls = `<div class="grid-export"><button type="button" id="copy-grid-image">Copy grid image</button><button type="button" id="copy-grid-string">Copy grid string</button><p id="copy-status" role="status" aria-live="polite"></p><img id="grid-image-fallback" hidden alt="Grid image to copy"><textarea id="grid-string-fallback" aria-label="Grid string to copy" readonly hidden></textarea></div>`;
 
 export type ExportVariant = 'puzzle' | 'completed';
 export function setupGridExport(board: HTMLElement, snapshot: ()=>ExportGrid, variants?: {
@@ -124,7 +124,7 @@ export function setupGridExport(board: HTMLElement, snapshot: ()=>ExportGrid, va
   const imageButton=control<HTMLButtonElement>('copy-grid-image');
   const textButton=control<HTMLButtonElement>('copy-grid-string');
   const status=control<HTMLElement>('copy-status');
-  const download=control<HTMLAnchorElement>('download-grid-image');
+  const preview=control<HTMLImageElement>('grid-image-fallback');
   const fallback=control<HTMLTextAreaElement>('grid-string-fallback');
   let url: string | undefined;
   const copyText=async(getSnapshot:()=>ExportGrid)=>{
@@ -133,7 +133,7 @@ export function setupGridExport(board: HTMLElement, snapshot: ()=>ExportGrid, va
     catch {fallback.value=text;fallback.hidden=false;fallback.focus();fallback.select();status.textContent='Clipboard access is unavailable. Copy the selected grid string manually.';}
   };
   const copyImage=async(button:HTMLButtonElement,getImage:()=>Promise<Blob>)=>{
-    button.disabled=true;download.hidden=true;status.textContent='Copying grid image…';
+    button.disabled=true;preview.hidden=true;status.textContent='Copying grid image…';
     const blob=Promise.resolve().then(getImage);
     try {
       // Start the clipboard write during the click gesture, before PNG encoding finishes.
@@ -143,24 +143,10 @@ export function setupGridExport(board: HTMLElement, snapshot: ()=>ExportGrid, va
     } catch {
       try {
         if(url) URL.revokeObjectURL(url);
-        url=URL.createObjectURL(await blob);download.href=url;download.hidden=false;
-        download.download='killer-sudoku.png';download.textContent='Download grid image';
-        status.textContent='Clipboard image access is unavailable. Download the PNG instead.';
+        url=URL.createObjectURL(await blob);preview.src=url;preview.hidden=false;
+        status.textContent='Automatic clipboard access is unavailable. Right-click or long-press the image below and choose Copy image.';
       } catch {status.textContent='Unable to create the grid image. Please try again.';}
     } finally {button.disabled=false;}
-  };
-  const exportFile=async(button:HTMLButtonElement,variant:ExportVariant,format:'png'|'json')=>{
-    button.disabled=true;status.textContent='Preparing grid export…';
-    try {
-      const blob=format==='png' ? await variants!.image(variant) : new Blob([serializeGrid(variants!.snapshot(variant))],{type:'application/json'});
-      if(url)URL.revokeObjectURL(url);
-      url=URL.createObjectURL(blob);
-      download.href=url;download.download=`killer-sudoku-${variant}.${format}`;
-      download.textContent=`Download ${variant==='puzzle'?'puzzle':'completed grid'} ${format.toUpperCase()}`;
-      download.hidden=false;download.click();
-      status.textContent=`${format.toUpperCase()} download started. Use the download link to save it again.`;
-    } catch {status.textContent='Unable to export the grid. Please try again.';}
-    finally {button.disabled=false;}
   };
   textButton.addEventListener('click',()=>void copyText(snapshot));
   imageButton.addEventListener('click',()=>void copyImage(imageButton,()=>gridImage(board)));
@@ -176,12 +162,7 @@ export function setupGridExport(board: HTMLElement, snapshot: ()=>ExportGrid, va
       const text=document.createElement('button');text.type='button';text.textContent='Copy '+(variant==='puzzle'?'puzzle':'completed grid')+' as string';
       text.addEventListener('click',()=>void copyText(()=>variants.snapshot(variant)));
       group.append(image,text);status.before(group);buttons.push(image,text);variantGroups.push(group);
-      for(const format of ['png','json'] as const){
-        const exportButton=document.createElement('button');exportButton.type='button';
-        exportButton.textContent=`Export ${variant==='puzzle'?'puzzle':'completed grid'} as ${format==='png'?'PNG':'JSON'}`;
-        exportButton.addEventListener('click',()=>void exportFile(exportButton,variant,format));
-        group.append(exportButton);buttons.push(exportButton);
-      }
+
     }
   }
   return (enabled:boolean)=>{

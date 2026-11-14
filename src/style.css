@@ -6,6 +6,7 @@
 .grid-export button { width: auto; margin: 0; padding: 10px 14px; }
 .grid-export p { width: 100%; margin: 0; font-size: 13px; }
 .grid-export textarea { width: 100%; min-height: 100px; }
+.grid-export img { display: block; max-width: 100%; height: auto; }
 .grid-export [hidden] { display: none; }
 .export-variant { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; padding-top: 10px; border-top: 1px solid #e0e2d8; }
 .export-variant strong { width: 100%; font-size: 12px; }
