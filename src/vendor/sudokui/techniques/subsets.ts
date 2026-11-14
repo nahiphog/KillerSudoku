@@ -61,9 +61,10 @@ function sharedUnits(cells: number[]): number[] {
 /**
  * Naked subsets. `locked` selects the locked variant (subset lies in a
  * box/line intersection and eliminates in both units) — HoDoKu rates those
- * separately and earlier.
+ * separately and earlier. Undefined includes both variants under the ordinary
+ * Naked Pair/Triple name for apps without a separate locked-subset category.
  */
-export function findNakedSubset(g: Grid, size: number, locked: boolean): Step | null {
+export function findNakedSubset(g: Grid, size: number, locked: boolean | undefined): Step | null {
   for (let u = 0; u < 27; u++) {
     const empty = UNITS[u].filter(
       (c) => g.values[c] === 0 && popcount(g.cands[c]) <= size
@@ -95,7 +96,7 @@ export function findNakedSubset(g: Grid, size: number, locked: boolean): Step | 
       }
       if (!elims.length) continue;
       const isLocked = units.length >= 2 && unitsWithElims.size >= 2 && size <= 3;
-      if (isLocked !== locked) continue;
+      if (locked !== undefined && isLocked !== locked) continue;
       const tech: Tech = locked
         ? size === 2
           ? 'LOCKED_PAIR'
